@@ -2,50 +2,51 @@
 
 **System Architecture Document**
 
-*AI-Powered Personalized Music Streaming Platform*
+_AI-Powered Personalized Music Streaming Platform_
 
-  ----------------------------------- -----------------------------------
-  **Document Title**                  VYNL --- System Architecture
-                                      Document
+---
 
-  **Version**                         1.0
+**Document Title** VYNL --- System Architecture
+Document
 
-  **Status**                          Draft --- Conceptual (technology
-                                      stack not yet finalized)
+**Version** 1.0
 
-  **Date**                            09 August 2026
+**Status** Draft --- Technology Stack Defined
 
-  **Related Documents**               VYNL PRD v1.0, VYNL SRS v1.0
-  ----------------------------------- -----------------------------------
+**Date** 12 August 2026
+
+**Related Documents** VYNL PRD v1.0, VYNL SRS v1.0
+
+---
 
 1\. Purpose and Architectural Approach
 
-This document describes the architecture of VYNL at a conceptual,
-component level. Because the implementation technology stack has not yet
-been finalized, the architecture is expressed in terms of logical
-layers, services, data stores, and integration points rather than
-specific frameworks, languages, or vendor products. This allows the
-architecture to remain valid as concrete technology choices are made
-during detailed design, while still giving engineering teams a clear
-structural blueprint to implement against.
+This document describes the architecture of VYNL. The core technology stack has been defined to guide the implementation of backend services, database storage, and integrations, while maintaining clean separation of concerns between layers.
 
 1.1 Architectural Principles
 
--   Separation of concerns: streaming/storage, recommendation,
-    explanation, and collaboration are distinct logical services.
+- Separation of concerns: streaming/storage, recommendation,
+  explanation, and collaboration are distinct logical services.
 
--   Fetch-once-and-reuse: external audio and metadata sources are called
-    only when data is not already persisted.
+- Fetch-once-and-reuse: external audio and metadata sources are called
+  only when data is not already persisted.
 
--   Graceful degradation: the ML and LLM layers are auxiliary to core
-    playback and must not block it if unavailable.
+- Graceful degradation: the ML and LLM layers are auxiliary to core
+  playback and must not block it if unavailable.
 
--   Batch-oriented learning: recommendation quality improves through a
-    scheduled daily training cycle rather than per-interaction
-    retraining.
+- Batch-oriented learning: recommendation quality improves through a
+  scheduled daily training cycle rather than per-interaction
+  retraining.
 
--   Stack-agnostic services: each logical service can be implemented and
-    scaled independently, regardless of eventual technology choice.
+1.2 Core Technology Stack
+
+- **Frontend**: React 18 + Vite + TypeScript (TSX), utilizing CSS Modules for component styling and `framer-motion` for transitions.
+- **Backend / API Layer**: FastAPI (Python), providing asynchronous REST API endpoints and WebSockets for real-time collaborative playlists.
+- **Database**: Supabase (PostgreSQL) is the primary relational database. No traditional ORM is used for the MVP; the backend interacts with the database directly using SQL drivers (`asyncpg`) or the official `supabase-py` client library.
+- **Audio Storage**: Persistent storage in a Telegram Private Channel. Audio files are uploaded via a Telegram client library (e.g., `telethon` or `pyrogram`), retrieving File IDs which are persisted in Supabase to resolve play/download URLs dynamically.
+- **Authentication**: Google OAuth 2.0.
+- **LLM Provider**: Local Ollama instance (running Llama 3 or similar model) used to generate explanations for recommendations.
+- **Machine Learning**: `pandas`, `numpy`, and `scikit-learn` (or specialized recommendation tools like `lightfm`) for daily batch retraining.
 
 2\. High-Level Architecture Overview
 
@@ -60,33 +61,36 @@ structure and the primary dependencies between layers.
 ![](media/897c9743c183faf6cc61bc81b2fa5d1eb1a8eddd.png){width="6.4in"
 height="4.741926946631671in"}
 
-*Figure 1 --- VYNL high-level layered architecture (conceptual).*
+_Figure 1 --- VYNL high-level layered architecture (conceptual)._
 
 2.1 Layer Descriptions
 
-  -----------------------------------------------------------------------
-  **Layer**            **Responsibility**
-  -------------------- --------------------------------------------------
-  1\. Client Layer     Web application UI: playback, AI playlist builder,
-                       collaborative playlists, synchronized lyrics,
-                       Monthly Wrap
+---
 
-  2\. Application /    Authentication/session management and a backend
-  API Layer            API gateway that routes requests to core services
+**Layer** **Responsibility**
 
-  3\. Core Service     Storage & Streaming, Recommendation (ML), LLM
-  Layer                Explanation, Playlist/Collaboration, Activity
-                       Logging, Monthly Wrap, Metadata/Audio-Feature
-                       Enrichment
+---
 
-  4\. Data & Storage   Application database, Telegram-based persistent
-  Layer                audio storage, local song-attribute dataset,
-                       accumulated activity store
+1\. Client Layer Web application UI: playback, AI playlist builder,
+collaborative playlists, synchronized lyrics,
+Monthly Wrap
 
-  5\. External         Open-source Song API, ReccoBeats/FreqBlog,
-  Integrations & Batch Discogs, and the scheduled daily ML training job
-  Jobs                 
-  -----------------------------------------------------------------------
+2\. Application / Authentication/session management and a backend
+API Layer API gateway that routes requests to core services
+
+3\. Core Service Storage & Streaming, Recommendation (ML), LLM
+Layer Explanation, Playlist/Collaboration, Activity
+Logging, Monthly Wrap, Metadata/Audio-Feature
+Enrichment
+
+4\. Data & Storage Application database, Telegram-based persistent
+Layer audio storage, local song-attribute dataset,
+accumulated activity store
+
+5\. External Open-source Song API, ReccoBeats/FreqBlog,
+Integrations & Batch Discogs, and the scheduled daily ML training job
+Jobs
+-----------------------------------------------------------------------
 
 3\. Component Descriptions
 
@@ -173,17 +177,17 @@ the personalized Monthly Wrap.
 
 3.12 Data Stores
 
--   Application Database --- canonical store for users, songs, metadata,
-    File ID references, playlists, and activity summaries.
+- Application Database --- canonical store for users, songs, metadata,
+  File ID references, playlists, and activity summaries.
 
--   Telegram Private Channel --- persistent audio storage; source of
-    unique File IDs used to generate temporary streaming/download links.
+- Telegram Private Channel --- persistent audio storage; source of
+  unique File IDs used to generate temporary streaming/download links.
 
--   Local Song Attributes Dataset --- primary lookup source for audio
-    features and song metadata.
+- Local Song Attributes Dataset --- primary lookup source for audio
+  features and song metadata.
 
--   Accumulated User Activity Store --- durable log of user
-    interactions, read by the daily training job.
+- Accumulated User Activity Store --- durable log of user
+  interactions, read by the daily training job.
 
 4\. Storage & Streaming Pipeline (Detailed View)
 
@@ -199,7 +203,7 @@ the database along with retrieved metadata and audio features.
 ![](media/86507484b1eecbd868e5a8420a150680be155a85.png){width="6.2in"
 height="3.7478510498687663in"}
 
-*Figure 2 --- Storage & Streaming pipeline.*
+_Figure 2 --- Storage & Streaming pipeline._
 
 Audio-feature attributes are resolved from the local dataset first, with
 ReccoBeats/FreqBlog used only as a fallback when a song is not found
@@ -224,8 +228,8 @@ queue.
 ![](media/93dac1f2ad79fa24e3fe726550f5cde3e1cea25e.png){width="6.0in"
 height="4.347656386701662in"}
 
-*Figure 3 --- Recommendation & Learning pipeline, including the daily
-training loop.*
+_Figure 3 --- Recommendation & Learning pipeline, including the daily
+training loop._
 
 Each recommended song is paired with an LLM-generated explanation, built
 from two context sources: the user\'s listening behavior/preferences and
@@ -291,71 +295,69 @@ interrupting live recommendation serving.
 
 7.3 Resilience
 
--   If the Recommendation Service is unavailable, the system falls back
-    to a simpler queue (e.g., recently popular songs) rather than
-    blocking playback.
+- If the Recommendation Service is unavailable, the system falls back
+  to a simpler queue (e.g., recently popular songs) rather than
+  blocking playback.
 
--   If the LLM Explanation Service is unavailable, recommended songs are
-    still shown without an explanation rather than withholding the
-    recommendation.
+- If the LLM Explanation Service is unavailable, recommended songs are
+  still shown without an explanation rather than withholding the
+  recommendation.
 
--   If an external enrichment source (ReccoBeats/FreqBlog, Discogs) is
-    unavailable, playback proceeds using whatever attributes/metadata
-    are already available, with enrichment retried later.
+- If an external enrichment source (ReccoBeats/FreqBlog, Discogs) is
+  unavailable, playback proceeds using whatever attributes/metadata
+  are already available, with enrichment retried later.
 
 7.4 Observability
 
--   Cache-hit rate (songs served from stored File ID vs. new external
-    fetch) should be tracked as a core storage-efficiency metric.
+- Cache-hit rate (songs served from stored File ID vs. new external
+  fetch) should be tracked as a core storage-efficiency metric.
 
--   Daily training job success/failure and resulting model version
-    should be logged and monitored.
+- Daily training job success/failure and resulting model version
+  should be logged and monitored.
 
--   Latency of song resolution, recommendation generation, and
-    explanation generation should be tracked against the NFR targets
-    defined in the SRS.
+- Latency of song resolution, recommendation generation, and
+  explanation generation should be tracked against the NFR targets
+  defined in the SRS.
 
 8\. Traceability to Requirements
 
 The table below maps major architectural components to the functional
 requirement groups they fulfil, as defined in the SRS.
 
-  -----------------------------------------------------------------------
-  **Component**                        **Related SRS Requirements**
-  ------------------------------------ ----------------------------------
-  Authentication & Session Service     FR-1.x
+---
 
-  Storage & Streaming Service          FR-2.x
+**Component** **Related SRS Requirements**
 
-  Metadata & Audio-Feature Enrichment  FR-2.10 -- FR-2.13
-  Service                              
+---
 
-  Recommendation Service (ML)          FR-3.x
+Authentication & Session Service FR-1.x
 
-  LLM Explanation Service              FR-3.3, FR-3.4
+Storage & Streaming Service FR-2.x
 
-  Playlist & Collaboration Service     FR-4.x, FR-5.x
+Metadata & Audio-Feature Enrichment FR-2.10 -- FR-2.13
+Service
 
-  Client --- Lyrics View               FR-6.x
+Recommendation Service (ML) FR-3.x
 
-  Activity Logging Service             FR-7.x
+LLM Explanation Service FR-3.3, FR-3.4
 
-  Daily ML Training Job                FR-8.x
+Playlist & Collaboration Service FR-4.x, FR-5.x
 
-  Monthly Wrap Service                 FR-9.x
-  -----------------------------------------------------------------------
+Client --- Lyrics View FR-6.x
+
+Activity Logging Service FR-7.x
+
+Daily ML Training Job FR-8.x
+
+Monthly Wrap Service FR-9.x
+-----------------------------------------------------------------------
 
 9\. Open Architectural Decisions
 
--   Final backend/frontend technology stack and hosting/deployment
-    model.
+- Whether backend services are deployed as independent microservices or as modules within a monolithic FastAPI backend for the MVP (monolithic modules are recommended for initial simplicity).
 
--   Whether core services are deployed as independent microservices or
-    as modules within a monolithic backend for MVP.
+- The specific local model to serve via Ollama (e.g., Llama 3 8B, Mistral 7B) depending on system performance.
 
--   Choice of ML serving infrastructure and LLM provider/hosting for the
-    explanation service.
+- Hosting and deployment topology for the FastAPI backend, Ollama server, and scheduled daily batch training scripts.
 
--   Long-term suitability and limits of Telegram-based audio storage at
-    scale, and a possible migration path to dedicated object storage if
-    needed.
+- Long-term suitability and limits of Telegram-based audio storage at scale, and a possible migration path to dedicated object storage if needed.

@@ -2,22 +2,24 @@
 
 **Product Requirements Document (PRD)**
 
-*AI-Powered Personalized Music Streaming Platform*
+_AI-Powered Personalized Music Streaming Platform_
 
-  ----------------------------------- -----------------------------------
-  **Document Title**                  VYNL --- Product Requirements
-                                      Document
+---
 
-  **Version**                         1.0
+**Document Title** VYNL --- Product Requirements
+Document
 
-  **Status**                          Draft
+**Version** 1.0
 
-  **Date**                            09 August 2026
+**Status** Draft --- Technology Stack Defined
 
-  **Product**                         VYNL Web Application (MVP)
+**Date** 12 August 2026
 
-  **Prepared For**                    VYNL Product & Engineering Team
-  ----------------------------------- -----------------------------------
+**Product** VYNL Web Application (MVP)
+
+**Prepared For** VYNL Product & Engineering Team
+
+---
 
 1\. Executive Summary
 
@@ -58,38 +60,38 @@ synchronized, immersive surface.
 
 3.1 Business Goals
 
--   Launch a differentiated MVP web product that demonstrates clear
-    personalization value within the first listening session.
+- Launch a differentiated MVP web product that demonstrates clear
+  personalization value within the first listening session.
 
--   Establish an efficient, cost-controlled audio storage and delivery
-    pipeline that minimizes repeated external API usage.
+- Establish an efficient, cost-controlled audio storage and delivery
+  pipeline that minimizes repeated external API usage.
 
--   Build a foundation of user activity data sufficient to support daily
-    model retraining from early access onward.
+- Build a foundation of user activity data sufficient to support daily
+  model retraining from early access onward.
 
--   Validate user engagement and retention signals (returning sessions,
-    wrap engagement) to justify further investment (mobile apps,
-    monetization).
+- Validate user engagement and retention signals (returning sessions,
+  wrap engagement) to justify further investment (mobile apps,
+  monetization).
 
 3.2 Product Objectives
 
--   Deliver song recommendations that are explainable, not just accurate
-    --- every recommendation carries a human-readable reason.
+- Deliver song recommendations that are explainable, not just accurate
+  --- every recommendation carries a human-readable reason.
 
--   Let users generate a complete, coherent playlist from a small set of
-    seed inputs (genres, artists, 3-5 reference songs).
+- Let users generate a complete, coherent playlist from a small set of
+  seed inputs (genres, artists, 3-5 reference songs).
 
--   Support collaborative playlists where multiple users and the AI
-    contribute to a single shared playlist.
+- Support collaborative playlists where multiple users and the AI
+  contribute to a single shared playlist.
 
--   Provide an immersive, customizable synchronized-lyrics experience
-    during playback.
+- Provide an immersive, customizable synchronized-lyrics experience
+  during playback.
 
--   Provide reliable high-quality streaming with minimal repeat-latency
-    for previously requested songs.
+- Provide reliable high-quality streaming with minimal repeat-latency
+  for previously requested songs.
 
--   Summarize each user\'s monthly listening activity into an engaging,
-    shareable Monthly Wrap.
+- Summarize each user\'s monthly listening activity into an engaging,
+  shareable Monthly Wrap.
 
 4\. Target Audience and User Personas
 
@@ -103,36 +105,36 @@ personalization over passive consumption.
 
 Persona 1 --- \"The Curator\"
 
--   Actively builds and maintains playlists for different moods and
-    occasions.
+- Actively builds and maintains playlists for different moods and
+  occasions.
 
--   Wants AI assistance to speed up playlist creation without losing
-    creative control.
+- Wants AI assistance to speed up playlist creation without losing
+  creative control.
 
--   Values explanations for recommendations over black-box suggestions.
+- Values explanations for recommendations over black-box suggestions.
 
 Persona 2 --- \"The Social Listener\"
 
--   Shares music with friends and enjoys building playlists together.
+- Shares music with friends and enjoys building playlists together.
 
--   Wants a collaborative space where multiple people (and AI) shape one
-    playlist.
+- Wants a collaborative space where multiple people (and AI) shape one
+  playlist.
 
 Persona 3 --- \"The Immersive Listener\"
 
--   Listens with lyrics on, wants a visually engaging, personalized
-    playback screen.
+- Listens with lyrics on, wants a visually engaging, personalized
+  playback screen.
 
--   Cares about audio quality and the ability to download for offline
-    listening.
+- Cares about audio quality and the ability to download for offline
+  listening.
 
 Persona 4 --- \"The Reflective Listener\"
 
--   Enjoys end-of-period recaps (e.g., existing \"year/month in review\"
-    features on other platforms).
+- Enjoys end-of-period recaps (e.g., existing \"year/month in review\"
+  features on other platforms).
 
--   Engages with the Monthly Wrap as a way to understand and share their
-    own listening identity.
+- Engages with the Monthly Wrap as a way to understand and share their
+  own listening identity.
 
 5\. Scope
 
@@ -164,18 +166,18 @@ Persona 4 --- \"The Reflective Listener\"
 
 5.2 Out of Scope (MVP)
 
--   Native iOS/Android mobile applications (web-only for this release).
+- Native iOS/Android mobile applications (web-only for this release).
 
--   Offline-first mobile playback and background sync.
+- Offline-first mobile playback and background sync.
 
--   Paid subscription tiers, billing, and monetization workflows.
+- Paid subscription tiers, billing, and monetization workflows.
 
--   Podcast, audiobook, or non-music audio content.
+- Podcast, audiobook, or non-music audio content.
 
--   Real-time (sub-daily) recommendation-model retraining.
+- Real-time (sub-daily) recommendation-model retraining.
 
--   Social graph features beyond collaborative playlists (e.g., public
-    profiles, follower feeds).
+- Social graph features beyond collaborative playlists (e.g., public
+  profiles, follower feeds).
 
 6\. Key Features
 
@@ -226,141 +228,145 @@ Where supported, users can download songs for offline or personal use.
 Each user receives a personalized Monthly Wrap summarizing their
 listening activity, including:
 
--   Total listening activity
+- Total listening activity
 
--   Most-played songs and most-listened-to artists
+- Most-played songs and most-listened-to artists
 
--   Favorite genres and listening patterns
+- Favorite genres and listening patterns
 
--   Frequently replayed and skipped songs
+- Frequently replayed and skipped songs
 
--   Newly discovered artists
+- Newly discovered artists
 
--   Other relevant listening statistics
+- Other relevant listening statistics
 
 7\. Success Metrics / KPIs
 
-  ------------------------------------------------------------------------
-  **Metric**                **Description**                   **MVP
-                                                              Target**
-  ------------------------- --------------------------------- ------------
-  Recommendation engagement \% of AI-recommended queue songs  ≥ 35%
-  rate                      played to completion or \> 50%    
+---
 
-  Explanation               \% of users who view or interact  ≥ 40%
-  view/interaction rate     with LLM recommendation           
-                            explanations                      
+**Metric** **Description** **MVP
+Target**
 
-  AI playlist completion    \% of started AI                  ≥ 60%
-  rate                      playlist-generation flows that    
-                            result in a saved playlist        
+---
 
-  Collaborative playlist    \% of active users who join or    ≥ 15%
-  adoption                  create at least one collaborative 
-                            playlist                          
+Recommendation engagement \% of AI-recommended queue songs ≥ 35%
+rate played to completion or \> 50%
 
-  Cache-hit / reuse rate    \% of song requests served from   ≥ 70% after
-                            stored File ID vs. new external   ramp-up
-                            API fetch                         
+Explanation \% of users who view or interact ≥ 40%
+view/interaction rate with LLM recommendation  
+explanations
 
-  Monthly Wrap engagement   \% of eligible users who open     ≥ 50%
-                            their Monthly Wrap                
+AI playlist completion \% of started AI ≥ 60%
+rate playlist-generation flows that  
+result in a saved playlist
 
-  7-day retention           \% of new users returning within  ≥ 25%
-                            7 days                            
-  ------------------------------------------------------------------------
+Collaborative playlist \% of active users who join or ≥ 15%
+adoption create at least one collaborative
+playlist
+
+Cache-hit / reuse rate \% of song requests served from ≥ 70% after
+stored File ID vs. new external ramp-up
+API fetch
+
+Monthly Wrap engagement \% of eligible users who open ≥ 50%
+their Monthly Wrap
+
+7-day retention \% of new users returning within ≥ 25%
+7 days
+------------------------------------------------------------------------
 
 8\. Assumptions and Constraints
 
 8.1 Assumptions
 
--   Users access VYNL through a modern desktop or mobile web browser; no
-    native app is required for MVP.
+- Users access VYNL through a modern desktop or mobile web browser; no
+  native app is required for MVP.
 
--   An open-source Song API, ReccoBeats/FreqBlog, and Discogs remain
-    available and usable as external data/audio sources.
+- An open-source Song API, ReccoBeats/FreqBlog, and Discogs remain
+  available and usable as external data/audio sources.
 
--   A private Telegram channel is an acceptable persistent audio storage
-    mechanism for the MVP stage.
+- A private Telegram channel is an acceptable persistent audio storage
+  mechanism for the MVP stage.
 
--   Sufficient user activity accumulates daily to make once-per-day
-    model retraining meaningful.
+- Sufficient user activity accumulates daily to make once-per-day
+  model retraining meaningful.
 
 8.2 Constraints
 
--   The exact technology stack for implementation has not been finalized
-    at the time of this document; the accompanying System Architecture
-    is described conceptually and is stack-agnostic.
+- The technology stack has been defined: React + Vite + TypeScript (Frontend), FastAPI (Backend), Supabase (Database without ORM), Google OAuth (Authentication), Telegram Private Channel (Audio Storage), and Ollama (Local LLM Provider).
 
--   Reliance on third-party/open-source APIs introduces dependency on
-    their availability, rate limits, and terms of use.
+- Reliance on third-party/open-source APIs introduces dependency on
+  their availability, rate limits, and terms of use.
 
--   Audio storage via a Telegram channel is subject to Telegram\'s
-    platform policies and file-handling limits.
+- Audio storage via a Telegram channel is subject to Telegram\'s
+  platform policies and file-handling limits.
 
--   Model retraining is batch-based (daily), so recommendation quality
-    improvements are not instantaneous.
+- Model retraining is batch-based (daily), so recommendation quality
+  improvements are not instantaneous.
 
 9\. Release Milestones (High-Level)
 
-  -----------------------------------------------------------------------
-  **Phase**   **Milestone**             **Key Deliverables**
-  ----------- ------------------------- ---------------------------------
-  Phase 1     Core Playback & Storage   Auth, search/play, Storage &
-                                        Streaming pipeline, base DB
-                                        schema
+---
 
-  Phase 2     Recommendations &         ML recommendation service, LLM
-              Explanations              explanation service, personal
-                                        queue
+**Phase** **Milestone** **Key Deliverables**
 
-  Phase 3     Playlists & Collaboration AI playlist generation,
-                                        collaborative playlists
+---
 
-  Phase 4     Immersive Lyrics          Synchronized lyrics, backdrop
-                                        customization / upload
+Phase 1 Core Playback & Storage Auth, search/play, Storage &
+Streaming pipeline, base DB
+schema
 
-  Phase 5     Insights & Learning Loop  Activity logging, daily training
-                                        pipeline, Monthly Wrap
+Phase 2 Recommendations & ML recommendation service, LLM
+Explanations explanation service, personal
+queue
 
-  Phase 6     MVP Hardening             Performance, security review,
-                                        beta feedback incorporation
-  -----------------------------------------------------------------------
+Phase 3 Playlists & Collaboration AI playlist generation,
+collaborative playlists
+
+Phase 4 Immersive Lyrics Synchronized lyrics, backdrop
+customization / upload
+
+Phase 5 Insights & Learning Loop Activity logging, daily training
+pipeline, Monthly Wrap
+
+Phase 6 MVP Hardening Performance, security review,
+beta feedback incorporation
+-----------------------------------------------------------------------
 
 10\. Stakeholders
 
-  -----------------------------------------------------------------------
-  **Role**                **Responsibility**
-  ----------------------- -----------------------------------------------
-  Product Owner           Defines and prioritizes product scope and
-                          roadmap
+---
 
-  Engineering / Backend   Implements application services, storage &
-  Team                    streaming, and API integrations
+**Role** **Responsibility**
 
-  ML / Data Team          Builds and maintains the recommendation model
-                          and daily training pipeline
+---
 
-  Frontend Team           Builds the web client, playback, lyrics, and
-                          playlist UI
+Product Owner Defines and prioritizes product scope and
+roadmap
 
-  QA                      Validates functional and non-functional
-                          requirements prior to release
+Engineering / Backend Implements application services, storage &
+Team streaming, and API integrations
 
-  End Users               Primary consumers of the platform; source of
-                          listening/activity data
-  -----------------------------------------------------------------------
+ML / Data Team Builds and maintains the recommendation model
+and daily training pipeline
+
+Frontend Team Builds the web client, playback, lyrics, and
+playlist UI
+
+QA Validates functional and non-functional
+requirements prior to release
+
+End Users Primary consumers of the platform; source of
+listening/activity data
+-----------------------------------------------------------------------
 
 11\. Open Questions
 
--   Which specific technology stack (backend framework, frontend
-    framework, ML serving stack) will be finalized for implementation?
+- What are the licensing/rate-limit terms of the open-source Song API
+  and fallback services at production scale?
 
--   What are the licensing/rate-limit terms of the open-source Song API
-    and fallback services at production scale?
+- Will monetization (ads, subscription) be introduced in a later
+  phase, and how might it affect download/offline features?
 
--   Will monetization (ads, subscription) be introduced in a later
-    phase, and how might it affect download/offline features?
-
--   What is the target initial user base size for capacity planning
-    beyond the general MVP scale assumed in the SRS?
+- What is the target initial user base size for capacity planning
+  beyond the general MVP scale assumed in the SRS?
