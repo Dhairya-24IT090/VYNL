@@ -9,16 +9,16 @@ from urllib.parse import urlparse
 # Patterns for sensitive data redaction
 REDACTION_PATTERNS = [
     (re.compile(r"(Bearer\s+)[A-Za-z0-9_\-\.]+", re.IGNORECASE), r"\1[REDACTED]"),
-    (re.compile(r"(vynl_session=)[^;\s]+", re.IGNORECASE), r"\1[REDACTED]"),
-    (re.compile(r"(csrf_token=)[^;\s]+", re.IGNORECASE), r"\1[REDACTED]"),
+    (re.compile(r"(vynl_session=)[^;\s\"']+", re.IGNORECASE), r"\1[REDACTED]"),
+    (re.compile(r"(csrf_token=)[^;\s\"']+", re.IGNORECASE), r"\1[REDACTED]"),
     (re.compile(r"(api[_-]?key[\"']?\s*[:=]\s*[\"']?)[A-Za-z0-9_\-\.]+", re.IGNORECASE), r"\1[REDACTED]"),
     (re.compile(r"(file_id[\"']?\s*[:=]\s*[\"']?)[A-Za-z0-9_\-\.]+", re.IGNORECASE), r"\1[REDACTED]"),
     (re.compile(r"(storage_ref[\"']?\s*[:=]\s*[\"']?)[A-Za-z0-9_\-\.]+", re.IGNORECASE), r"\1[REDACTED]"),
     (re.compile(r"(telegram:[A-Za-z0-9_\-\.]+)", re.IGNORECASE), r"[REDACTED_TELEGRAM]"),
     (re.compile(r"(canary_[a-zA-Z0-9_\-]+)", re.IGNORECASE), r"[REDACTED_CANARY]"),
-    (re.compile(r"(token=)[^&\s]+", re.IGNORECASE), r"\1[REDACTED]"),
-    (re.compile(r"(sig=)[^&\s]+", re.IGNORECASE), r"\1[REDACTED]"),
-    (re.compile(r"(signature=)[^&\s]+", re.IGNORECASE), r"\1[REDACTED]"),
+    (re.compile(r"(token=)[^&\s\"']+", re.IGNORECASE), r"\1[REDACTED]"),
+    (re.compile(r"(sig=)[^&\s\"']+", re.IGNORECASE), r"\1[REDACTED]"),
+    (re.compile(r"(signature=)[^&\s\"']+", re.IGNORECASE), r"\1[REDACTED]"),
 ]
 
 def sanitize_url(url: str) -> str:
