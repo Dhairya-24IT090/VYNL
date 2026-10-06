@@ -51,7 +51,7 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 43 | F19-4-a-b | Retry policy | playlist, wrap | DONE | Exp backoff, full jitter, circuit breaker probe | `shared/service-kit/tests/test_resilience.py` | `a66013a` |
 | 44 | F19-5-c-b | Chaos tests | playlist, wrap | DONE | Results documented and repeatable | `scripts/chaos.py`, `docs/CHAOS_RESULTS.md` | `47a38ac` |
 | 45 | F19-6-c-b | Error mapping | playlist, wrap | DONE | Every service passes shared contract test | `shared/contracts/error_contract/test_errors.py` | `433ae1a` |
-| 46 | F20-1-c-b | Transport and secret hygiene | playlist, wrap | TODO | Log audit finds no sensitive values | `scripts/log_audit.py` | |
+| 46 | F20-1-c-b | Transport and secret hygiene | playlist, wrap | DONE | Log audit finds no sensitive values | `scripts/log_audit.py` | `0fe286e` |
 | 47 | F20-2-c-b | Service-level authorization | playlist, wrap | DONE | Direct service calls with wrong user rejected | `shared/service-kit/tests/test_service_authz.py` | `b1b8591` |
 | 48 | F20-5-c-b | Deletion fan-out | playlist, wrap | DONE | Deleted user leaves no personal data | `tests/test_deletion_fanout.py` | `3f00faa` |
 | 49 | O-1-c-b | Distributed tracing | playlist, wrap | DONE | One trace spans browser through worker | `tests/test_tracing.py` | `b5c1cb1` |
