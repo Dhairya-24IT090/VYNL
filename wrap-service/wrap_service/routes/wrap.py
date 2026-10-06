@@ -43,9 +43,8 @@ def create_wrap_router(service: WrapService) -> APIRouter:
             raise UnauthorizedError("Internal authentication required")
 
         deleted_count = await service.repo.delete_user_wraps(user_id)
-        # Invalidate cache if exists
-        now_period = service._get_current_period()
-        await service.cache.delete(user_id, now_period)
+        # Invalidate all cached wraps for this user
+        await service.cache.purge_user(user_id)
         return {"status": "purged", "deleted_wraps": deleted_count}
 
     return router

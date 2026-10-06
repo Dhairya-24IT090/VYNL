@@ -292,3 +292,57 @@ class PlaylistRepository:
             uuid.UUID(event_id),
             json.dumps(payload),
         )
+
+    async def purge_user_data(self, conn: asyncpg.Connection, user_id: str) -> Dict[str, int]:
+        counts = {"playlists_deleted": 0, "playlists_transferred": 0, "items_anonymized": 0}
+        uid = uuid.UUID(user_id)
+
+        # 1. Owned playlists
+        owned = await conn.fetch(
+            "SELECT id, is_collaborative FROM playlist.playlists WHERE owner_id = $1",
+            uid,
+        )
+        for row in owned:
+            p_id = row["id"]
+            if row["is_collaborative"]:
+                earliest_editor = await conn.fetchrow(
+                    """
+                    SELECT user_id FROM playlist.playlist_collaborators
+                    WHERE playlist_id = $1 AND role = 'editor'
+                    ORDER BY added_at ASC LIMIT 1
+                    """,
+                    p_id,
+                )
+                if earliest_editor:
+                    await conn.execute(
+                        "UPDATE playlist.playlists SET owner_id = $2 WHERE id = $1",
+                        p_id,
+                        earliest_editor["user_id"],
+                    )
+                    await conn.execute(
+                        "DELETE FROM playlist.playlist_collaborators WHERE playlist_id = $1 AND user_id = $2",
+                        p_id,
+                        earliest_editor["user_id"],
+                    )
+                    counts["playlists_transferred"] += 1
+                    continue
+
+            await conn.execute("DELETE FROM playlist.playlists WHERE id = $1", p_id)
+            counts["playlists_deleted"] += 1
+
+        # 2. Anonymize user items in other playlists
+        await conn.execute(
+            """
+            UPDATE playlist.playlist_items
+            SET added_by = '00000000-0000-0000-0000-000000000000'
+            WHERE added_by = $1
+            """,
+            uid,
+        )
+
+        # 3. Delete collaborator rows and invites
+        await conn.execute("DELETE FROM playlist.playlist_collaborators WHERE user_id = $1", uid)
+        await conn.execute("DELETE FROM playlist.playlist_invites WHERE created_by = $1 OR redeemed_by = $1", uid)
+
+        return counts
+

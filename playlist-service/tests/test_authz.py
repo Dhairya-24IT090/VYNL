@@ -124,6 +124,45 @@ class MockPlaylistRepository:
     async def write_outbox_event(self, conn, event_id, payload):
         self.outbox.append((event_id, payload))
 
+    async def purge_user_data(self, conn, user_id: str):
+        counts = {"playlists_deleted": 0, "playlists_transferred": 0, "items_anonymized": 0}
+        to_del = []
+        for p_id, p in list(self.playlists.items()):
+            if p["owner_id"] == user_id:
+                if p.get("is_collaborative"):
+                    # Find earliest editor
+                    editors = [
+                        u for (pl_id, u), r in self.collaborators.items()
+                        if pl_id == p_id and r == "editor"
+                    ]
+                    if editors:
+                        new_owner = editors[0]
+                        p["owner_id"] = new_owner
+                        self.collaborators.pop((p_id, new_owner), None)
+                        counts["playlists_transferred"] += 1
+                        continue
+                to_del.append(p_id)
+                counts["playlists_deleted"] += 1
+
+        for p_id in to_del:
+            self.playlists.pop(p_id, None)
+            self.items.pop(p_id, None)
+
+        # Anonymize items in other playlists
+        for p_id, item_list in self.items.items():
+            for item in item_list:
+                if item.get("added_by") == user_id:
+                    item["added_by"] = "00000000-0000-0000-0000-000000000000"
+                    counts["items_anonymized"] += 1
+
+        # Remove collaborator entries
+        for (pl_id, u) in list(self.collaborators.keys()):
+            if u == user_id:
+                self.collaborators.pop((pl_id, u), None)
+
+        return counts
+
+
 # Authorization Matrix Test (Task F10-1)
 AUTHZ_MATRIX = [
     # (role, action, expected_status)

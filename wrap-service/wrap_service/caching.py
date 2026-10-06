@@ -79,3 +79,22 @@ class WrapCache:
             except Exception as e:
                 logger.warning(f"Redis cache delete error: {e}")
         self._local_cache.pop(key, None)
+
+    async def purge_user(self, user_id: str) -> None:
+        """Purges all cached wrap keys for user_id during account deletion."""
+        if self.redis:
+            try:
+                cursor = 0
+                while True:
+                    cursor, keys = await self.redis.scan(cursor, match=f"vynl:wrap:{user_id}:*")
+                    if keys:
+                        await self.redis.delete(*keys)
+                    if cursor == 0:
+                        break
+            except Exception as e:
+                logger.warning(f"Redis purge_user error: {e}")
+        prefix = f"vynl:wrap:{user_id}:"
+        to_del = [k for k in self._local_cache if k.startswith(prefix)]
+        for k in to_del:
+            self._local_cache.pop(k, None)
+

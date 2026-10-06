@@ -451,3 +451,17 @@ class PlaylistService:
                 raise ForbiddenError("Only owner can manage collaborators")
             return await self.repo.remove_collaborator(conn, playlist_id, user_id)
 
+    async def purge_user_data(self, user_id: str) -> Dict[str, Any]:
+        async with self.db.transaction() as conn:
+            counts = await self.repo.purge_user_data(conn, user_id)
+        if self.draft_store and self.draft_store.redis:
+            cursor = 0
+            while True:
+                cursor, keys = await self.draft_store.redis.scan(cursor, match=f"draft:{user_id}:*")
+                if keys:
+                    await self.draft_store.redis.delete(*keys)
+                if cursor == 0:
+                    break
+        return counts
+
+

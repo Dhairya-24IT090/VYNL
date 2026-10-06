@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import Optional
 from fastapi import FastAPI
 from service_kit.auth import SessionVerifier
 from service_kit.db import DatabaseManager
@@ -20,12 +21,13 @@ def create_app(
     db_manager: DatabaseManager,
     redis_manager: RedisManager,
     session_verifier: SessionVerifier,
+    repo: Optional[WrapRepository] = None,
 ) -> FastAPI:
     metrics = MetricsRegistry(service_name=settings.SERVICE_NAME)
     shutdown = GracefulShutdownManager(service_name=settings.SERVICE_NAME)
 
     cache = WrapCache(redis_client=redis_manager._client)
-    repo = WrapRepository()
+    repo = repo or WrapRepository()
     aggregator = WrapAggregator()
     service = WrapService(
         repo=repo,
