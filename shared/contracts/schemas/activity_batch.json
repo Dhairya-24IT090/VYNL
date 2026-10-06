@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VYNLActivityBatch",
+  "type": "object",
+  "required": ["events"],
+  "properties": {
+    "events": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": ["event_id", "type", "ts"],
+        "properties": {
+          "event_id": { "type": "string", "format": "uuid" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "play", "skip", "like", "search",
+              "queue_add", "queue_remove",
+              "playlist_add", "playlist_remove", "playlist_reorder",
+              "playlist_generate", "playlist_save",
+              "rec_accept", "rec_reject", "rec_explanation_view", "download"
+            ]
+          },
+          "ts": { "type": "string", "format": "date-time" },
+          "song_id": { "type": "string", "format": "uuid" },
+          "playlist_id": { "type": "string", "format": "uuid" },
+          "listened_ms": { "type": "integer", "minimum": 0 },
+          "meta": { "type": "object" }
+        }
+      }
+    },
+    "csrf": { "type": "string" }
+  }
+}

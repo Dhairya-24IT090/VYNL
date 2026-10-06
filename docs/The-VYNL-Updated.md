@@ -1,6 +1,6 @@
 # <a id="_z8z1sbxo4uh7"></a>Introduction:
 
-**VYNL** is an AI-powered music streaming platform designed to provide users with a highly personalized and interactive music experience. Unlike traditional music streaming platforms that primarily rely on predefined playlists and generic recommendation algorithms, VYNL focuses on understanding each user's individual music taste, listening patterns, preferences, and interactions with songs. The platform uses **Artificial Intelligence and Machine Learning (AI/ML)** to analyze user behavior and generate personalized music recommendations that evolve as the user continues to interact with the platform.
+**VYNL** is an AI-powered music streaming platform designed to provide users with a highly personalized and interactive music experience. Unlike traditional music streaming platforms that primarily rely on predefined playlists and generic recommendation algorithms, VYNL focuses on understanding each user's individual music taste, listening patterns, preferences, and interactions with songs. The platform uses an **LLM API as its AI decision layer** to understand user context and generate personalized music recommendations. Instead of training and serving a separate recommendation system, VYNL sends the song the user is currently listening to together with relevant user activity and listening context to the configured LLM API. The LLM returns recommended songs, which VYNL resolves through its existing song acquisition and storage pipeline before adding them to the user's queue or playing them.
 
 VYNL aims to make music discovery more intelligent and engaging by considering not only what a user listens to, but also how they interact with the music presented to them. User activities such as searching for songs, playing tracks, skipping songs, listening duration, playlist interactions, and other forms of engagement can contribute to building a better understanding of the user's preferences. This information is used to continuously improve future recommendations and provide a more personalized experience. In addition to AI-powered recommendations, VYNL combines intelligent playlist generation, collaborative music experiences, synchronized interactive lyrics, high-quality streaming and downloading, and personalized monthly listening insights into a single platform.
 
@@ -10,15 +10,15 @@ The core philosophy of VYNL is to create a **continuous personalization loop**, 
 
 ### <a id="_jw8jvf281hl1"></a>**1. AI-Assisted Queue Creation and Song Recommendation**
 
-VYNL uses AI/ML to automatically generate a personalized queue of songs based on the user's listening behavior and preferences. When a user plays a song or playlist, the system analyzes relevant information such as the user's listening history, previously played songs, interactions, and the musical attributes of the current track. Once the current song or playlist finishes, the system presents a queue of AI-selected recommendations.
+VYNL uses an **LLM API to generate a personalized queue of songs** based on the user's listening behavior and preferences. When a user is listening to a song, the backend sends the currently playing song together with relevant user activity, listening history, recent interactions, and available song metadata/audio attributes to the LLM API. The LLM returns a structured set of song recommendations. VYNL then resolves those songs through the Storage & Streaming Pipeline, fetching and storing any songs that are not already available, and adds the resolved songs to the user's queue.
 
-Each recommended song is accompanied by a **curated explanation** generated using an LLM, describing why that particular song was selected for the user. This makes the recommendation process more transparent and personalized rather than simply presenting a list of unexplained songs.
+Each recommendation can include a **reason returned by the LLM API** explaining why the song fits the user's current context. This makes the recommendation process more transparent and personalized rather than simply presenting a list of unexplained songs.
 
 ### <a id="_7ysfapdlu83f"></a>**2. AI-Assisted Playlist Suggestion and Creation**
 
 VYNL allows users to create completely personalized playlists with the assistance of AI. Users can specify the **genres and artists** they are interested in and provide approximately **3–5 songs** that represent the desired mood, style, or direction of the playlist.
 
-The AI model analyzes the user's selections and the characteristics of the provided songs to understand the intended mood and musical direction. It then generates a **custom-curated playlist from scratch**, selecting songs that align with the user's specified genres, artists, and reference tracks.
+VYNL sends the user's selections to the configured **LLM API**, including the requested genres, artists, 3–5 reference songs, and relevant available song metadata. The LLM returns a **custom-curated playlist from scratch**, selecting songs that align with the specified genres, artists, reference tracks, and requested direction. VYNL then resolves the returned songs through the Storage & Streaming Pipeline and stores the resulting playlist.
 
 This allows users to create playlists based on a particular mood, activity, genre, or musical theme without manually searching for and adding every individual song.
 
@@ -26,7 +26,7 @@ This allows users to create playlists based on a particular mood, activity, genr
 
 VYNL supports **collaborative playlist creation**, allowing multiple users to contribute to the same playlist. Users can add, remove, or modify songs while building a playlist together.
 
-AI can further assist the collaborative process by analyzing the combined preferences and contributions of the participating users and suggesting songs that are likely to appeal to the group. This creates a hybrid playlist-building experience where **multiple users and AI work together** to curate the final playlist.
+The LLM API can further assist the collaborative process by receiving the combined preferences and contributions of the participating users and returning songs that are likely to appeal to the group. The returned songs are resolved through the same Storage & Streaming Pipeline before being suggested or added. This creates a hybrid playlist-building experience where **multiple users and AI work together** to curate the final playlist.
 
 ### <a id="_9jj7083v06iu"></a>**4. Custom and Interactive Synchronized Lyrics**
 
