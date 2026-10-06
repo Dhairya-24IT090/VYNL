@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 22:40]
+## [2026-10-06 22:45]
+
+### [Category: Dev] — F11-3 Edit Message Protocol and Viewer Rejection
+What changed:
+- Implemented real-time mutating frame processing (`add`, `move`, `remove`, `resync`, `suggestion.reject`) in `playlist_service/ws.py`.
+- Enforced defense-in-depth role re-verification on every mutating frame: viewers attempting mutations receive an explicit WebSocket error frame (`{"type": "error", "code": "forbidden", "message": "Viewers cannot mutate playlists"}`) and the playlist state remains unmodified.
+- Enforced dynamic role demotion check: collaborators demoted mid-session have subsequent mutation frames immediately rejected.
+- Verified in `playlist-service/tests/test_ws_protocol.py`: viewer edits rejected across `add`, `move`, and `remove`; editor and owner edits accepted with `ack` and broadcast `op_applied`; demoted collaborator mid-session edit rejected.
+Why:
+- Requirement [F11-3]: strict client message authorization and validation on open collaborative sockets.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F11-2-a WebSocket Connection Handshake and Cluster Limit
 What changed:

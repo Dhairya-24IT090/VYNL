@@ -24,8 +24,8 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 16 | F10-5-a-b | Playlists as playback source and context | playlist | DONE | Playback endpoint returns ordered items; context caps at 50 | `playlist-service/tests/test_playback_context.py` | `a90852e` |
 | 17 | F10-6 | Playlist UI | web | TODO | Stale edit shows clear message and recovers, no data loss | `web/tests/playlist_ui.test.tsx` | |
 | 18 | F11-1 | Collaborators and invites | playlist | DONE | Invite redeemable once; expired fail | `playlist-service/tests/test_invites.py` | `7523d34` |
-| 19 | F11-2-a | WebSocket connection | playlist | DONE | Handshake validates auth; 50 socket cluster limit enforced | `playlist-service/tests/test_ws_connection.py` | pending |
-| 20 | F11-3 | Edit message protocol | playlist | TODO | Viewer's edit rejected on open socket | `playlist-service/tests/test_ws_protocol.py` | |
+| 19 | F11-2-a | WebSocket connection | playlist | DONE | Handshake validates auth; 50 socket cluster limit enforced | `playlist-service/tests/test_ws_connection.py` | `2ff67c8` |
+| 20 | F11-3 | Edit message protocol | playlist | DONE | Viewer's edit rejected on open socket | `playlist-service/tests/test_ws_protocol.py` | pending |
 | 21 | F11-4 | Versioned updates, conflict snapshots | playlist | TODO | Concurrent edits converge for all participants | `playlist-service/tests/test_ws_convergence.py` | |
 | 22 | F11-5 | Redis pub/sub fan-out | playlist | TODO | Clients on different instances see each other's edits | `playlist-service/tests/test_ws_pubsub.py` | |
 | 23 | F11-6 | Close codes and shutdown behavior | playlist | TODO | Rolling deploy causes reconnects without data loss | `playlist-service/tests/test_ws_shutdown.py` | |

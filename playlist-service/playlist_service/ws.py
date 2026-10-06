@@ -342,24 +342,26 @@ class CollabManager:
                         item_id=item_id,
                     )
 
+                fresh_p = await self.service.get_playlist(actor, conn.playlist_id)
+
                 # Send ack to author
                 await conn.send_json({
                     "type": "ack",
                     "client_msg_id": client_msg_id,
-                    "version": res["version"]
+                    "version": fresh_p["version"]
                 })
 
                 # Broadcast op_applied to all participants
                 await self.broadcast(conn.playlist_id, {
                     "type": "op_applied",
                     "op": op,
-                    "version": res["version"],
-                    "items": res["items"],
+                    "version": fresh_p["version"],
+                    "items": fresh_p["items"],
                     "actor_id": conn.user_id
                 })
 
                 # Trigger AI Suggestion job (TASK 24)
-                await self.trigger_ai_suggestions_if_needed(conn.playlist_id, res["version"])
+                await self.trigger_ai_suggestions_if_needed(conn.playlist_id, fresh_p["version"])
 
             except Exception as err:
                 logger.error(f"Error applying WS op {op}: {err}")
