@@ -118,6 +118,9 @@ class MockPlaylistRepository:
     async def add_collaborator(self, conn, playlist_id, user_id, role):
         self.collaborators[(playlist_id, user_id)] = role
 
+    async def list_collaborators(self, conn, playlist_id):
+        return [{"user_id": u, "role": r} for (p, u), r in self.collaborators.items() if p == playlist_id]
+
     async def write_outbox_event(self, conn, event_id, payload):
         self.outbox.append((event_id, payload))
 
