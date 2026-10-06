@@ -1,129 +1,97 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { AuthProvider, useAuth } from '../src/context/AuthContext'
-import { SignInPage, AuthGuard } from '../src/components/AuthPage'
+import { AuthProvider, safeReturnTo, useAuth } from '../src/context/AuthContext'
+import { AuthGuard, SignInPage } from '../src/components/AuthPage'
+import { api } from '../src/services/apiClient'
 
-const TestProtectedComponent = () => {
-  const { user, logout } = useAuth()
-  return (
-    <div>
-      <span data-testid="user-display">Welcome, {user?.username}</span>
-      <button data-testid="logout-btn" onClick={logout}>
-        Logout
-      </button>
-    </div>
-  )
+function Protected() {
+  const { user } = useAuth()
+  return <p>Welcome, {user?.username}</p>
 }
 
-describe('Task 2 [F1-8]: Sign-in page and Auth Guard', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    vi.clearAllMocks()
-  })
+function response(status: number, body: unknown) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 401 ? 'Unauthorized' : 'OK',
+    headers: new Headers({ 'content-type': 'application/json' }),
+    json: async () => body,
+  }
+}
 
-  it('keeps user signed in across page refresh if session is valid', async () => {
-    // Setup stored valid session
-    const validUser = { user_id: 'user-dhairya', username: 'Dhairya', is_authenticated: true }
-    const futureExpiry = Date.now() + 14 * 24 * 60 * 60 * 1000
-    localStorage.setItem('vynl_user', JSON.stringify(validUser))
-    localStorage.setItem('vynl_session_expiry', futureExpiry.toString())
-    localStorage.setItem('vynl_session', 'mock-token-xyz')
+afterEach(() => vi.restoreAllMocks())
+
+describe('F1-8 cookie-backed sign-in', () => {
+  it('bootstraps from /v1/auth/me and never reads or writes browser storage', async () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem')
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    global.fetch = vi.fn().mockResolvedValue(response(200, {
+      user_id: 'user-1', display_name: 'Dhairya', avatar_url: 'https://cdn.example/avatar.png',
+    })) as any
 
     render(
       <AuthProvider>
-        <MemoryRouter initialEntries={['/dashboard']}>
+        <MemoryRouter initialEntries={['/playlists/abc']}>
           <Routes>
-            <Route
-              path="/dashboard"
-              element={
-                <AuthGuard>
-                  <TestProtectedComponent />
-                </AuthGuard>
-              }
-            />
+            <Route path="/playlists/:id" element={<AuthGuard><Protected /></AuthGuard>} />
             <Route path="/sign-in" element={<SignInPage />} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
     )
-
-    // User is maintained without needing to sign in again
-    await waitFor(() => {
-      expect(screen.getByTestId('user-display')).toHaveTextContent('Welcome, Dhairya')
-    })
-    expect(screen.queryByTestId('signin-page')).not.toBeInTheDocument()
+    expect(screen.getByTestId('auth-loading')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Welcome, Dhairya')).toBeInTheDocument())
+    expect(fetch).toHaveBeenCalledWith('/v1/auth/me', expect.objectContaining({ credentials: 'include' }))
+    expect(getItem).not.toHaveBeenCalled()
+    expect(setItem).not.toHaveBeenCalled()
   })
 
-  it('redirects to /sign-in when session has expired', async () => {
-    // Setup stored expired session (timestamp in the past)
-    const expiredUser = { user_id: 'user-old', username: 'OldUser', is_authenticated: true }
-    const pastExpiry = Date.now() - 1000
-    localStorage.setItem('vynl_user', JSON.stringify(expiredUser))
-    localStorage.setItem('vynl_session_expiry', pastExpiry.toString())
-    localStorage.setItem('vynl_session', 'expired-token')
-
+  it('preserves protected routes and rejects external or script redirects', async () => {
+    global.fetch = vi.fn().mockResolvedValue(response(401, { error: { code: 'unauthorized', message: 'Sign in' } })) as any
     render(
       <AuthProvider>
-        <MemoryRouter initialEntries={['/dashboard']}>
+        <MemoryRouter initialEntries={['/playlists/abc?tab=live']}>
           <Routes>
-            <Route
-              path="/dashboard"
-              element={
-                <AuthGuard>
-                  <TestProtectedComponent />
-                </AuthGuard>
-              }
-            />
+            <Route path="/playlists/:id" element={<AuthGuard><Protected /></AuthGuard>} />
             <Route path="/sign-in" element={<SignInPage />} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
     )
-
-    // Should redirect to /sign-in and clear expired items
-    await waitFor(() => {
-      expect(screen.getByTestId('signin-page')).toBeInTheDocument()
-    })
-    expect(screen.queryByTestId('user-display')).not.toBeInTheDocument()
-    expect(localStorage.getItem('vynl_user')).toBeNull()
+    expect(await screen.findByTestId('signin-google')).toHaveTextContent('Sign in with Google')
+    expect(safeReturnTo('//evil.com')).toBe('/')
+    expect(safeReturnTo('https://evil.com')).toBe('/')
+    expect(safeReturnTo('javascript:alert(1)')).toBe('/')
+    expect(safeReturnTo('/playlists/abc?tab=live')).toBe('/playlists/abc?tab=live')
   })
 
-  it('allows user to sign in through form and sets 14-day expiry', async () => {
-    const user = userEvent.setup()
-
+  it('coalesces parallel 401 responses to one unauthorized event', async () => {
+    let calls = 0
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === '/v1/auth/me') return response(200, { user_id: 'u', display_name: 'User' }) as any
+      calls += 1
+      return response(401, { error: { code: 'unauthorized', message: 'Expired' } }) as any
+    }) as any
+    const onUnauthorized = vi.fn()
+    window.addEventListener('vynl:unauthorized', onUnauthorized)
     render(
       <AuthProvider>
-        <MemoryRouter initialEntries={['/sign-in']}>
+        <MemoryRouter initialEntries={['/playlists/abc']}>
           <Routes>
+            <Route path="/playlists/:id" element={<AuthGuard><Protected /></AuthGuard>} />
             <Route path="/sign-in" element={<SignInPage />} />
-            <Route
-              path="/"
-              element={
-                <AuthGuard>
-                  <TestProtectedComponent />
-                </AuthGuard>
-              }
-            />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
     )
-
-    const usernameInput = screen.getByTestId('signin-username')
-    const submitBtn = screen.getByTestId('signin-submit-btn')
-
-    await user.type(usernameInput, 'Alex')
-    await user.click(submitBtn)
-
-    await waitFor(() => {
-      expect(screen.getByTestId('user-display')).toHaveTextContent('Welcome, Alex')
-    })
-
-    const storedUser = JSON.parse(localStorage.getItem('vynl_user') || '{}')
-    expect(storedUser.username).toBe('Alex')
-    const storedExpiry = parseInt(localStorage.getItem('vynl_session_expiry') || '0', 10)
-    expect(storedExpiry).toBeGreaterThan(Date.now() + 13 * 24 * 60 * 60 * 1000)
+    await screen.findByText('Welcome, User')
+    const results = await Promise.allSettled([api.get('/v1/probe/1'), api.get('/v1/probe/2'), api.get('/v1/probe/3')])
+    expect(results.map((result) => result.status)).toEqual(['rejected', 'rejected', 'rejected'])
+    expect(results.every((result) => result.status === 'rejected' && (result.reason as Error & { status: number }).status === 401)).toBe(true)
+    await screen.findByTestId('signin-google')
+    expect(calls).toBe(3)
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+    window.removeEventListener('vynl:unauthorized', onUnauthorized)
   })
 })

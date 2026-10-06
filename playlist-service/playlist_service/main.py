@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 from typing import Optional
 from fastapi import FastAPI
 from service_kit.auth import InMemorySessionVerifier, SessionVerifier
@@ -42,6 +43,18 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # Startup
+        if getattr(settings, "AUTO_MIGRATE", False):
+            migration_dir = os.path.join(os.path.dirname(__file__), "..", "migrations")
+            await db_manager.run_migrations(migration_dir, "playlist")
+            await db_manager.get_pool()
+            redis_client = await redis_manager.get_client()
+            if hasattr(session_verifier, "redis"):
+                session_verifier.redis = redis_client
+            if hasattr(session_verifier, "pool"):
+                session_verifier.pool = db_manager._pool
+            draft_store.redis = redis_client
+            collab_mgr.redis = redis_client
+            sse_mgr.redis = redis_client
         yield
         # Shutdown
         await shutdown.initiate_shutdown()
@@ -67,10 +80,17 @@ def create_app(
     )
 
     # Mount observability router (/healthz, /readyz, /metrics)
+    async def check_dependencies() -> bool:
+        async with db_manager.connection() as conn:
+            await conn.fetchval("SELECT 1")
+        await (await redis_manager.get_client()).ping()
+        return True
+
     health_router = create_health_router(
         service_name=settings.SERVICE_NAME,
         metrics_registry=metrics,
         is_draining_fn=lambda: shutdown.is_draining,
+        ready_check_fn=check_dependencies,
     )
     app.include_router(health_router)
 
@@ -79,5 +99,6 @@ def create_app(
     app.include_router(create_drafts_router(draft_store))
     app.include_router(create_internal_router(service, draft_store, sse_mgr))
     app.include_router(create_ws_router(collab_mgr))
+    app.state.shutdown_manager = shutdown
 
     return app

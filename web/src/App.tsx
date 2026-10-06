@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { PlayerProvider } from './context/PlayerContext'
 import { BackdropProvider } from './context/BackdropContext'
@@ -14,6 +14,8 @@ import { WizardPage } from './pages/WizardPage'
 import { WrapPage } from './pages/WrapPage'
 import { LyricsPage } from './pages/LyricsPage'
 import { MetricsPage } from './pages/MetricsPage'
+import { SettingsPage } from './pages/SettingsPage'
+import { PlaylistDetailPage } from './pages/PlaylistDetailPage'
 
 export const AppContent: React.FC = () => {
   const [isQueueOpen, setIsQueueOpen] = useState<boolean>(false)
@@ -47,6 +49,14 @@ export const AppContent: React.FC = () => {
               </AuthGuard>
             }
           />
+          <Route
+            path="/playlists/:id"
+            element={
+              <AuthGuard>
+                <PlaylistDetailPage />
+              </AuthGuard>
+            }
+          />
           <Route path="/wizard" element={<WizardPage />} />
           <Route
             path="/wrap"
@@ -58,7 +68,16 @@ export const AppContent: React.FC = () => {
           />
           <Route path="/lyrics" element={<LyricsPage />} />
           <Route path="/metrics" element={<MetricsPage />} />
+          <Route
+            path="/settings"
+            element={
+              <AuthGuard>
+                <SettingsPage />
+              </AuthGuard>
+            }
+          />
           <Route path="/sign-in" element={<SignInPage />} />
+          <Route path="*" element={<section><h1>Page not found</h1><Link to="/">Go to Discover</Link></section>} />
         </Routes>
       </main>
 

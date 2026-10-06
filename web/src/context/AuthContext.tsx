@@ -5,17 +5,29 @@
  */
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { AuthUser } from '../types'
+import { api } from '../services/apiClient'
 
 export interface AuthContextType {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (username: string, token?: string) => Promise<boolean>
+  login: (returnTo?: string) => Promise<boolean>
   logout: () => Promise<void>
   checkSession: () => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
+
+export function safeReturnTo(candidate: string | null | undefined): string {
+  if (!candidate || !candidate.startsWith('/') || candidate.startsWith('//')) return '/'
+  try {
+    const target = new URL(candidate, window.location.origin)
+    if (target.origin !== window.location.origin) return '/'
+    return `${target.pathname}${target.search}${target.hash}`
+  } catch {
+    return '/'
+  }
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
@@ -23,21 +35,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkSession = async (): Promise<boolean> => {
     try {
-      // Check stored session or query verification endpoint
-      const savedUser = localStorage.getItem('vynl_user')
-      const sessionExpiry = localStorage.getItem('vynl_session_expiry')
-
-      if (savedUser && sessionExpiry) {
-        if (Date.now() > parseInt(sessionExpiry, 10)) {
-          // Session expired
-          await logout()
-          return false
-        }
-        setUser(JSON.parse(savedUser))
-        return true
-      }
-      setUser(null)
-      return false
+      const session = await api.get<{ user_id: string; display_name: string; avatar_url?: string }>(
+        '/v1/auth/me',
+        { skipAuth: true }
+      )
+      setUser({
+        user_id: session.user_id,
+        username: session.display_name,
+        avatar_url: session.avatar_url,
+        is_authenticated: true,
+      })
+      return true
     } catch {
       setUser(null)
       return false
@@ -47,31 +55,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   useEffect(() => {
-    checkSession()
+    void checkSession()
+    const onUnauthorized = () => setUser(null)
+    window.addEventListener('vynl:unauthorized', onUnauthorized)
+    return () => window.removeEventListener('vynl:unauthorized', onUnauthorized)
   }, [])
 
-  const login = async (username: string, token: string = 'dev-token'): Promise<boolean> => {
-    const newUser: AuthUser = {
-      user_id: `user-${username.toLowerCase().replace(/\s+/g, '_')}`,
-      username,
-      is_authenticated: true,
-    }
-
-    // Set 14-day expiry
-    const expiry = Date.now() + 14 * 24 * 60 * 60 * 1000
-    localStorage.setItem('vynl_user', JSON.stringify(newUser))
-    localStorage.setItem('vynl_session_expiry', expiry.toString())
-    localStorage.setItem('vynl_session', token)
-
-    setUser(newUser)
+  const login = async (returnTo: string = '/'): Promise<boolean> => {
+    const safeTarget = safeReturnTo(returnTo)
+    const query = new URLSearchParams({ return_to: safeTarget })
+    window.location.assign(`/v1/auth/google/start?${query.toString()}`)
     return true
   }
 
   const logout = async (): Promise<void> => {
-    localStorage.removeItem('vynl_user')
-    localStorage.removeItem('vynl_session_expiry')
-    localStorage.removeItem('vynl_session')
-    setUser(null)
+    try {
+      await api.post('/v1/auth/logout', undefined, { skipAuth: true })
+    } finally {
+      setUser(null)
+      window.dispatchEvent(new Event('vynl:session-ended'))
+    }
   }
 
   return (

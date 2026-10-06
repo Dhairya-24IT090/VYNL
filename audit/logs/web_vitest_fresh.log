@@ -1,0 +1,6 @@
+﻿Command: npm.cmd test -- --run --no-cache
+Working directory: web/
+Outcome: exit 0
+ RUN v5.0.3
+ Test Files 21 passed (21)
+      Tests 48 passed (48)

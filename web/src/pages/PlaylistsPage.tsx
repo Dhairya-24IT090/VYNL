@@ -3,6 +3,7 @@ import { Users, ListMusic } from 'lucide-react'
 import { PlaylistUI } from '../components/PlaylistUI'
 import { CollaborationUI } from '../components/CollaborationUI'
 import { SAMPLE_PLAYLISTS } from '../data/mockData'
+import { Link } from 'react-router-dom'
 
 export const PlaylistsPage: React.FC = () => {
   const [selectedPlaylistIndex, setSelectedPlaylistIndex] = useState<number>(0)
@@ -53,6 +54,7 @@ export const PlaylistsPage: React.FC = () => {
       ) : (
         <PlaylistUI initialPlaylist={activePlaylist} />
       )}
+      <Link to={`/playlists/${encodeURIComponent(activePlaylist.id)}`}>Open live playlist</Link>
     </div>
   )
 }

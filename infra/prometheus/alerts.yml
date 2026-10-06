@@ -1,0 +1,17 @@
+groups:
+  - name: vynl
+    rules:
+      - alert: VynlPlaylistUnavailable
+        expr: up{job="playlist"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Playlist service target is unavailable
+      - alert: VynlWrapUnavailable
+        expr: up{job="wrap"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Wrap service target is unavailable

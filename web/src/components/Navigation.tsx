@@ -9,6 +9,7 @@ import {
   Activity,
   LogOut,
   LogIn,
+  Settings,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
@@ -23,6 +24,7 @@ export const Navigation: React.FC = () => {
     { path: '/wrap', label: 'Monthly Wrap', icon: Award },
     { path: '/lyrics', label: 'Lyrics', icon: Mic2 },
     { path: '/metrics', label: 'Performance', icon: Activity },
+    { path: '/settings', label: 'Settings', icon: Settings },
   ]
 
   return (

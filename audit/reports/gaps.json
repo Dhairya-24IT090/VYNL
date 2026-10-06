@@ -1,0 +1,286 @@
+[
+  {
+    "id": "GAP-ENV-1",
+    "severity": "S1",
+    "tasks": [
+      "ALL"
+    ],
+    "requirement": "Run fresh backend, integration, runtime, sabotage, and load checks.",
+    "observed": "Python 3.12 and Docker were provisioned, but Compose startup failed with unknown shorthand flag f in -f. Required tooling remains missing; full service-backed verification is blocked.",
+    "expected": "Fresh executable evidence across services and dependencies.",
+    "reproduction": "docker --version; .venv\\\\Scripts\\\\python.exe --version; uv run --no-sync python --version.",
+    "evidence": "audit/reports/REMEDIATION_BLOCKED.md; audit/logs/preflight.log",
+    "suggested_fix": "Run audit in an environment with Docker, accessible Python 3.12, PostgreSQL, Redis, and required tooling.",
+    "regression_test": "Audit preflight records exact runtime versions and marks dependent checks UNVERIFIED when unavailable.",
+    "status": "CONFIRMED",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-WEB-1",
+    "severity": "S1",
+    "tasks": [
+      "F1-8",
+      "F2-6",
+      "F3-18",
+      "F3-19-b",
+      "F5-7",
+      "F6-3",
+      "F7-11",
+      "F9-5",
+      "F10-6",
+      "F12-4",
+      "F13-3",
+      "F14-1",
+      "F14-2-b",
+      "F14-4",
+      "F17-6",
+      "F18-1-a",
+      "F18-2",
+      "F18-3",
+      "F18-4",
+      "F18-5",
+      "F15-4"
+    ],
+    "requirement": "Each browser task requires independent black-box verification against its Done when and detailed probes.",
+    "observed": "Only the existing Vitest suite ran: 21 files / 48 tests passed; no Playwright/browser service simulations executed. Vitest green status does not independently demonstrate the task criteria.",
+    "expected": "Real browser and service-backed scenarios exercised.",
+    "reproduction": "npm.cmd test -- --run --no-cache (run from web/).",
+    "evidence": "audit/logs/web_vitest_fresh.log",
+    "suggested_fix": "Run Playwright against production build and live services; add audit-only probes for the specified edge cases.",
+    "regression_test": "Per-task browser scenario must fail under the corresponding sabotage.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-K1",
+    "severity": "S2",
+    "tasks": [
+      "F1-8",
+      "F2-6",
+      "F3-18",
+      "F3-19-b",
+      "F5-7",
+      "F6-3",
+      "F7-11",
+      "F9-5",
+      "F10-6",
+      "F12-4",
+      "F13-3",
+      "F14-1",
+      "F14-2-b",
+      "F14-4",
+      "F17-6",
+      "F18-1-a",
+      "F18-2",
+      "F18-3",
+      "F18-4",
+      "F18-5",
+      "F15-4"
+    ],
+    "requirement": "Each ledger row commit should actually substantiate the task implementation.",
+    "observed": "All 21 web rows reference 15d41bd, whose subject explicitly describes the 21-task frontend implementation. This is a genuine bulk commit, not 21 independent changes; task-level attribution is unavailable.",
+    "expected": "Per-task implementation and test mapping that can be individually reviewed.",
+    "reproduction": "git show --stat 15d41bd",
+    "evidence": "audit/logs/git_history.log",
+    "suggested_fix": "Retain row mapping but provide criterion-specific code/test evidence; hashes alone are not task proof.",
+    "regression_test": "Ledger audit checks each Done-when against test assertions and implementation path.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-K2",
+    "severity": "S1",
+    "tasks": [
+      "F11-2-a",
+      "F11-5"
+    ],
+    "requirement": "Ledger F11-2-a says cluster-wide cap; F11-5 requires 50 sockets per playlist.",
+    "observed": "The ledger wording could mean a global cluster total, while implementation is a Redis-backed cluster-wide cap of 50 connections per playlist (MAX_CLUSTER_SOCKETS_PER_PLAYLIST). Actual boundary behavior was not run.",
+    "expected": "Single clarified cap definition, implemented and exercised across instances.",
+    "reproduction": "Read docs/TASK_LEDGER.md rows 19 and 22; inspect supplied audit prompt.",
+    "evidence": "docs/TASK_LEDGER.md; audit/derived_requirements.md",
+    "suggested_fix": "Resolve scope (global cluster vs per playlist) in authoritative docs and test boundary 49/50/51 across instances.",
+    "regression_test": "Multi-instance WS test checks the agreed scope.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-K5",
+    "severity": "S1",
+    "tasks": [
+      "F10-5-a-b",
+      "F11-2-a",
+      "F11-5"
+    ],
+    "requirement": "All specified caps must match the PRD and be enforced at 49/50/51.",
+    "observed": "Source and tests show a playlist context slice at 50 and a 50-per-playlist connection constant; 49/50/51 black-box boundary behavior and PRD reconciliation were not verified.",
+    "expected": "Documented limits and boundary assertions.",
+    "reproduction": "Inspect task source, ledger, and tests; run cross-instance boundary probe.",
+    "evidence": "audit/derived_requirements.md",
+    "suggested_fix": "Verify every cap against PRD/Rev2 and add explicit boundary tests.",
+    "regression_test": "49 accepted, 50 behavior explicit, 51 rejected for each limit.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-K7",
+    "severity": "S1",
+    "tasks": [
+      "P-5-c-b"
+    ],
+    "requirement": "Every required environment variable must independently cause non-zero boot failure when missing.",
+    "observed": "No Python or Docker runtime available; cannot test variables individually.",
+    "expected": "Exit code, variable name in message, and no secret value for each required variable.",
+    "reproduction": "Run per-variable boot matrix in equipped environment.",
+    "evidence": "audit/logs/phase0_blockers_fresh.log",
+    "suggested_fix": "Add isolated subprocess boot tests for every required variable and malformed values.",
+    "regression_test": "Parameterized boot validation test over complete required-env inventory.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-K8",
+    "severity": "S2",
+    "tasks": [
+      "ALL"
+    ],
+    "requirement": "Reconcile claimed 118 pytest / 48 Vitest.",
+    "observed": "48 Vitest tests confirmed; pytest count not collected. Backend source includes test files but no accessible Python runtime.",
+    "expected": "Fresh collected count for each backend suite.",
+    "reproduction": "npm.cmd test -- --run --no-cache (run from web/).",
+    "evidence": "audit/logs/web_vitest_fresh.log",
+    "suggested_fix": "Collect pytest counts per package using fresh cache-disabled invocation.",
+    "regression_test": "CI records collection totals and compares documented claims.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-P-5-c-b-1",
+    "severity": "S1",
+    "tasks": [
+      "P-5-c-b"
+    ],
+    "requirement": "“Done when a rolling restart in docker-compose drops no requests or jobs.”",
+    "observed": "scripts/rolling_restart_test.sh performs sequential /healthz polling only; CONCURRENCY is unused; no restart, job delivery, or duplicate side-effect accounting is present. tests/test_lifecycle.py exists but its unit scenarios use in-memory mocks.",
+    "expected": "Sustained traffic and queued work during actual rolling restart with loss/duplication assertions.",
+    "reproduction": "Inspect scripts/rolling_restart_test.sh lines 8-29 and tests/test_lifecycle.py imports lines 13-22.",
+    "evidence": "audit/reports/AUDIT_ADDENDUM.md",
+    "suggested_fix": "Implement compose instance restarts plus concurrent real HTTP and queue workloads, and compare accepted/completed IDs.",
+    "regression_test": "Audit simulation must fail when a job is dropped or duplicated during restart.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-F1-8-1",
+    "severity": "S0",
+    "tasks": [
+      "F1-8"
+    ],
+    "requirement": "Session cookie has HttpOnly; Secure; SameSite=Lax; no token in localStorage/sessionStorage.",
+    "observed": "Cookie bootstrap implementation and focused Vitest coverage added; Playwright cookie/session proof and the full suite are incomplete.",
+    "expected": "Server managed HttpOnly secure cookie and bootstrap through authenticated API.",
+    "reproduction": "Inspect web/src/context/AuthContext.tsx localStorage getItem/setItem calls for vynl_session.",
+    "evidence": "audit/reports/AUDIT_ADDENDUM.md",
+    "suggested_fix": "Remove browser-readable token storage and use the session cookie contract.",
+    "regression_test": "Browser test asserts localStorage/sessionStorage contain no credential and inspects cookie flags.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": "audit/reports/REMEDIATION_BLOCKED.md"
+  },
+  {
+    "id": "GAP-F17-4-1",
+    "severity": "S1",
+    "tasks": [
+      "F17-4"
+    ],
+    "requirement": "POST /wrap/current/refresh limited to 1 per 10 minutes per user.",
+    "observed": "Cooldown changed to 600 seconds and targeted Redis test passed including 60-second sabotage, but no full-stack HTTP black-box probe or complete evidence triple was collected.",
+    "expected": "600-second atomic per-user Redis rate limit with Retry-After.",
+    "reproduction": "Inspect wrap-service/wrap_service/service.py constant and refresh_user_wrap.",
+    "evidence": "audit/reports/AUDIT_ADDENDUM.md",
+    "suggested_fix": "Use the specified 600-second cooldown and make reservation atomic under concurrent calls.",
+    "regression_test": "Real Redis boundary/concurrency test at 9:59 and 10:00, including two users.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": "audit/reports/REMEDIATION_BLOCKED.md"
+  },
+  {
+    "id": "GAP-F18-3-1",
+    "severity": "S1",
+    "tasks": [
+      "F18-3"
+    ],
+    "requirement": "“playlist detail (live)” and “settings (including account deletion)” have reachable pages.",
+    "observed": "Playlist detail/settings routes and focused route test added, but the full web suite has two failing core-page tests and no Playwright route/deletion proof.",
+    "expected": "Reachable protected routes and end-to-end deletion/sign-out flow.",
+    "reproduction": "Inspect Routes in web/src/App.tsx; paths only include /, /playlists, /wizard, /wrap, /lyrics, /metrics, /sign-in.",
+    "evidence": "audit/reports/AUDIT_ADDENDUM.md",
+    "suggested_fix": "Add detail/settings routes and connect settings deletion to the gateway flow.",
+    "regression_test": "Production-build Playwright route crawl verifies playlist detail and settings/deletion.",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": "audit/reports/REMEDIATION_BLOCKED.md"
+  },
+  {
+    "id": "GAP-OBS-1",
+    "severity": "S1",
+    "tasks": [
+      "shared/service-kit",
+      "P-5-c-b",
+      "F19-6-c-b",
+      "O-1-c-b"
+    ],
+    "requirement": "Python packages and contract tests must collect and execute.",
+    "observed": "Fresh collection initially failed because Optional was not imported in shared/service-kit/service_kit/observability.py. Import and regression test were added; combined run then exposed an independent repository test failure.",
+    "reproduction": "Run Python 3.12 pytest collection for shared/service-kit, shared/contracts/error_contract, and root tests.",
+    "evidence": "audit/reports/REMEDIATION_BLOCKED.md",
+    "suggested_fix": "Keep the typing import and regression test; verify package suites and commit with per-gap attribution.",
+    "regression_test": "shared/service-kit/tests/test_observability_import.py",
+    "status": "OPEN",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-WRAP-REPO-1",
+    "severity": "S1",
+    "tasks": [
+      "F17-4",
+      "F19-6-c-b",
+      "F20-5-c-b"
+    ],
+    "requirement": "Wrap service must support real persistence and its test suite must pass.",
+    "observed": "Combined fresh backend run: test_wrap_internal_purge_hmac_enforcement returned 500 because the DB-backed repository called execute on a MockConnection without that method.",
+    "reproduction": "Run combined Python suite; see audit/reports/REMEDIATION_BLOCKED.md.",
+    "evidence": "audit/reports/REMEDIATION_BLOCKED.md",
+    "suggested_fix": "Correct the repository/test dependency contract, then run real Postgres integration tests.",
+    "regression_test": "shared/service-kit/tests/test_service_authz.py::test_wrap_internal_purge_hmac_enforcement",
+    "status": "CONFIRMED",
+    "fixed_in": null,
+    "verification": null
+  },
+  {
+    "id": "GAP-WEB-CORE-1",
+    "severity": "S1",
+    "tasks": [
+      "F1-8",
+      "F18-3"
+    ],
+    "requirement": "Existing route tests must work with the cookie-backed auth bootstrap contract.",
+    "observed": "Fresh web suite: 47 passed, 2 failed, both core_pages tests because they seed vynl_user in localStorage while AuthProvider now calls /v1/auth/me.",
+    "reproduction": "Run npm.cmd test -- --run --no-cache from web.",
+    "evidence": "audit/reports/REMEDIATION_BLOCKED.md",
+    "suggested_fix": "Replace obsolete storage seeding with a test session bootstrap response and assert the protected page renders.",
+    "regression_test": "web/tests/core_pages.test.tsx",
+    "status": "CONFIRMED",
+    "fixed_in": null,
+    "verification": null
+  }
+]

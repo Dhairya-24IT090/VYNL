@@ -25,6 +25,7 @@ export interface RequestOptions extends RequestInit {
 
 export class ApiClient {
   private baseUrl: string
+  private unauthorizedNotified = false
 
   constructor(baseUrl: string = '') {
     this.baseUrl = baseUrl
@@ -32,7 +33,8 @@ export class ApiClient {
 
   async request<T = any>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
-    const headers = new Headers(options.headers || {})
+    const { skipAuth = false, ...fetchOptions } = options
+    const headers = new Headers(fetchOptions.headers || {})
 
     // 1. Inject W3C Traceparent
     if (!headers.has('traceparent') && !headers.has('Traceparent')) {
@@ -40,7 +42,7 @@ export class ApiClient {
     }
 
     // 2. Attach CSRF token on mutating requests
-    const method = (options.method || 'GET').toUpperCase()
+    const method = (fetchOptions.method || 'GET').toUpperCase()
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
       const csrfToken = getCookie('csrf_token')
       if (csrfToken && !headers.has('X-CSRF-Token')) {
@@ -48,17 +50,25 @@ export class ApiClient {
       }
     }
 
-    if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
+    if (!headers.has('Content-Type') && fetchOptions.body && typeof fetchOptions.body === 'string') {
       headers.set('Content-Type', 'application/json')
     }
 
     const config: RequestInit = {
-      ...options,
+      ...fetchOptions,
       headers,
       credentials: options.credentials || 'include',
     }
 
     const response = await fetch(url, config)
+
+    if (response.ok) this.unauthorizedNotified = false
+    if (response.status === 401 && !skipAuth && !endpoint.startsWith('/v1/auth/')) {
+      if (!this.unauthorizedNotified && typeof window !== 'undefined') {
+        this.unauthorizedNotified = true
+        window.dispatchEvent(new Event('vynl:unauthorized'))
+      }
+    }
 
     if (!response.ok) {
       let errorBody: any = null
@@ -273,4 +283,3 @@ export class CollabWSClient {
     }
   }
 }
-

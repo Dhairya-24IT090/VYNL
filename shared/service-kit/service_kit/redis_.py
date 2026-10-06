@@ -46,6 +46,7 @@ class RedisManager:
     async def get_client(self) -> redis.Redis:
         if self._client is None:
             self._client = redis.from_url(self.redis_url, decode_responses=True)
+        if self._token_bucket_script is None:
             self._token_bucket_script = self._client.register_script(TOKEN_BUCKET_LUA)
         return self._client
 

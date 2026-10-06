@@ -1,0 +1,191 @@
+name: vynl
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: vynl
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./platform_stub/init.sql:/docker-entrypoint-initdb.d/001-platform-stub.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vynl"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    stop_grace_period: 35s
+    networks: [vynl]
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redisdata:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    stop_grace_period: 35s
+    networks: [vynl]
+
+  platform-stub:
+    build: ./platform_stub
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/vynl
+      INTERNAL_AUTH_SECRET: dev-internal-auth-secret-key-32charsmin
+      PLAYLIST_URL: http://playlist-service:8000
+      WRAP_URL: http://wrap-service:8002
+    depends_on:
+      postgres: {condition: service_healthy}
+      playlist-service: {condition: service_started}
+      wrap-service: {condition: service_started}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/readyz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    stop_grace_period: 35s
+    networks: [vynl]
+
+  playlist-service:
+    build:
+      context: ..
+      dockerfile: infra/python-service.Dockerfile
+      args: {SERVICE_DIR: playlist-service}
+    environment:
+      ENV: development
+      PORT: "8000"
+      AUTO_MIGRATE: "true"
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/vynl
+      REDIS_URL: redis://redis:6379/0
+      INTERNAL_AUTH_SECRET: dev-internal-auth-secret-key-32charsmin
+      INVITE_SIGNING_KEYS: dev-invite-secret-key-1,dev-invite-secret-key-old
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    deploy: {replicas: 2}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+    init: true
+    stop_grace_period: 35s
+    networks: [vynl]
+
+  wrap-service:
+    command: ["python", "-m", "wrap_service.runtime"]
+    build:
+      context: ..
+      dockerfile: infra/python-service.Dockerfile
+      args: {SERVICE_DIR: wrap-service}
+    environment:
+      VYNL_WRAP_ENV: development
+      VYNL_WRAP_PORT: "8002"
+      VYNL_WRAP_AUTO_MIGRATE: "true"
+      VYNL_WRAP_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/vynl
+      VYNL_WRAP_REDIS_URL: redis://redis:6379/1
+      VYNL_WRAP_INTERNAL_AUTH_SECRET: dev-internal-auth-secret-key-32charsmin
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    deploy: {replicas: 2}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/readyz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+    init: true
+    stop_grace_period: 35s
+    networks: [vynl]
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/web.Dockerfile
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [vynl]
+
+  certgen:
+    image: alpine:3.20
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ["apk add --no-cache openssl >/dev/null; test -s /certs/vynl.pem || (openssl req -x509 -newkey rsa:3072 -sha256 -nodes -days 365 -keyout /tmp/key.pem -out /tmp/cert.pem -subj '/CN=localhost' -addext 'subjectAltName=DNS:localhost,DNS:vynl.local,IP:127.0.0.1' >/dev/null 2>&1; cat /tmp/cert.pem /tmp/key.pem > /certs/vynl.pem; chmod 600 /certs/vynl.pem)"]
+    volumes: ["tlscerts:/certs"]
+    networks: [vynl]
+
+  tls-proxy:
+    image: haproxy:3.0-alpine
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - tlscerts:/run/certs:ro
+    depends_on:
+      certgen: {condition: service_completed_successfully}
+      web: {condition: service_healthy}
+      platform-stub: {condition: service_healthy}
+      playlist-service: {condition: service_started}
+      wrap-service: {condition: service_started}
+    healthcheck:
+      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    stop_grace_period: 35s
+    networks: [vynl]
+
+  minio:
+    image: minio/minio:RELEASE.2025-02-07T23-21-09Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: vynl-dev
+      MINIO_ROOT_PASSWORD: vynl-dev-secret-pass
+    volumes: ["miniodata:/data"]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [vynl]
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--web.enable-lifecycle"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports: ["9090:9090"]
+    healthcheck:
+      test: ["CMD", "/bin/prometheus", "--version"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [vynl]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["16686:16686", "4317:4317", "4318:4318"]
+    healthcheck:
+      test: ["CMD", "/go/bin/healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [vynl]
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  tlscerts:
+
+networks:
+  vynl:
+    driver: bridge

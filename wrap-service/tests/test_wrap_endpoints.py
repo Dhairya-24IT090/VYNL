@@ -1,7 +1,9 @@
 import uuid
+import redis.asyncio as redis
 import pytest
+import pytest_asyncio
+import httpx
 from fastapi import FastAPI, Request
-from fastapi.testclient import TestClient
 
 from service_kit.context import Actor, RequestContext
 from service_kit.errors import AppException, create_error_response
@@ -11,12 +13,13 @@ from wrap_service.repository import WrapRepository
 from wrap_service.routes.wrap import create_wrap_router
 from wrap_service.service import WrapService
 
-@pytest.fixture
-def api_setup():
+@pytest_asyncio.fixture
+async def api_setup():
     repo = WrapRepository()
-    cache = WrapCache()
+    redis_client = redis.from_url("redis://127.0.0.1:6379/14", decode_responses=True)
+    cache = WrapCache(redis_client=redis_client)
     aggregator = WrapAggregator()
-    service = WrapService(repo=repo, cache=cache, aggregator=aggregator)
+    service = WrapService(repo=repo, cache=cache, aggregator=aggregator, redis_client=redis_client)
 
     app = FastAPI()
 
@@ -48,14 +51,15 @@ def api_setup():
         return await call_next(request)
 
     app.include_router(create_wrap_router(service))
-    client = TestClient(app)
-
-    return {
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
+    yield {
         "repo": repo,
         "cache": cache,
         "service": service,
         "client": client,
     }
+    await client.aclose()
+    await redis_client.aclose()
 
 @pytest.mark.asyncio
 async def test_get_wrap_success_and_not_found(api_setup):
@@ -77,14 +81,14 @@ async def test_get_wrap_success_and_not_found(api_setup):
     )
 
     # 1. Successful fetch of existing wrap
-    res = client.get("/v1/wrap/2026-08", headers={"X-Test-User-Id": user_id})
+    res = await client.get("/v1/wrap/2026-08", headers={"X-Test-User-Id": user_id})
     assert res.status_code == 200
     data = res.json()
     assert data["period"] == "2026-08"
     assert data["summary"]["total_counted_plays"] == 50
 
     # 2. Non-existent period -> 404
-    res_404 = client.get("/v1/wrap/2025-01", headers={"X-Test-User-Id": user_id})
+    res_404 = await client.get("/v1/wrap/2025-01", headers={"X-Test-User-Id": user_id})
     assert res_404.status_code == 404
     assert res_404.json()["error"]["code"] == "not_found"
 
@@ -101,11 +105,11 @@ async def test_get_wrap_authz_enforcement(api_setup):
     await repo.save_wrap(owner_id, "2026-08", {"user_id": owner_id, "period": "2026-08"})
 
     # 1. Unauthenticated -> 401
-    res_unauth = client.get("/v1/wrap/2026-08")
+    res_unauth = await client.get("/v1/wrap/2026-08")
     assert res_unauth.status_code == 401
 
     # 2. Stranger targeting owner -> 403
-    res_forbidden = client.get(
+    res_forbidden = await client.get(
         f"/v1/wrap/2026-08?user_id={owner_id}",
         headers={"X-Test-User-Id": stranger_id},
     )
@@ -121,7 +125,7 @@ async def test_refresh_rate_limit_returns_429_and_retry_after(api_setup):
     user_id = str(uuid.uuid4())
 
     # 1. First refresh request succeeds -> 202 Accepted
-    res1 = client.post(
+    res1 = await client.post(
         "/v1/wrap/current/refresh",
         headers={"X-Test-User-Id": user_id},
     )
@@ -130,12 +134,12 @@ async def test_refresh_rate_limit_returns_429_and_retry_after(api_setup):
     assert res1.json()["period"] is not None
 
     # 2. Immediate second refresh request triggers rate limit -> 429 Too Many Requests
-    res2 = client.post(
+    res2 = await client.post(
         "/v1/wrap/current/refresh",
         headers={"X-Test-User-Id": user_id},
     )
     assert res2.status_code == 429
     assert "Retry-After" in res2.headers
     retry_after = int(res2.headers["Retry-After"])
-    assert 0 < retry_after <= 60
+    assert 0 < retry_after <= 600
     assert res2.json()["error"]["code"] == "rate_limited"

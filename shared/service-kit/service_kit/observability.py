@@ -1,5 +1,5 @@
 import time
-from typing import Callable
+from typing import Callable, Optional
 from fastapi import APIRouter, Response, Request
 from prometheus_client import (
     CollectorRegistry,

@@ -1,9 +1,9 @@
-import time
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from service_kit.context import Actor
 from service_kit.errors import (
     ForbiddenError,
+    DependencyUnavailableError,
     NotFoundError,
     RateLimitedError,
     UnauthorizedError,
@@ -12,7 +12,7 @@ from wrap_service.aggregation import WrapAggregator
 from wrap_service.caching import WrapCache
 from wrap_service.repository import WrapRepository
 
-REFRESH_COOLDOWN_SECONDS = 60
+REFRESH_COOLDOWN_SECONDS = 600
 
 class WrapService:
     def __init__(
@@ -28,7 +28,6 @@ class WrapService:
         self.aggregator = aggregator
         self.user_provider = user_provider
         self.redis = redis_client
-        self._local_refresh_timestamps: Dict[str, float] = {}
 
     def _get_current_period(self) -> str:
         now = datetime.now(timezone.utc)
@@ -78,7 +77,7 @@ class WrapService:
     ) -> Dict[str, Any]:
         """
         Triggers on-demand recalculation of current month wrap.
-        Enforces 60-second cooldown rate limit per user (returns 429 + Retry-After).
+        Enforces a 10-minute atomic Redis cooldown per user (429 + Retry-After).
         """
         if not actor or not actor.user_id:
             raise UnauthorizedError("Authentication required")
@@ -88,19 +87,19 @@ class WrapService:
 
         # 1. Check rate limit
         rl_key = self._rate_limit_key(user_id)
-        if self.redis:
-            ttl = await self.redis.ttl(rl_key)
-            if ttl and ttl > 0:
-                raise RateLimitedError(retry_after=ttl)
-            # Set rate limit
-            await self.redis.set(rl_key, "1", ex=REFRESH_COOLDOWN_SECONDS)
-        else:
-            now = time.time()
-            last_req = self._local_refresh_timestamps.get(user_id)
-            if last_req and (now - last_req) < REFRESH_COOLDOWN_SECONDS:
-                remaining = int(REFRESH_COOLDOWN_SECONDS - (now - last_req))
-                raise RateLimitedError(retry_after=remaining)
-            self._local_refresh_timestamps[user_id] = now
+        if not self.redis:
+            raise DependencyUnavailableError("Refresh rate limiter unavailable")
+        try:
+            claimed = await self.redis.set(
+                rl_key, "1", ex=REFRESH_COOLDOWN_SECONDS, nx=True
+            )
+            if not claimed:
+                remaining = await self.redis.ttl(rl_key)
+                raise RateLimitedError(retry_after=max(1, int(remaining)))
+        except RateLimitedError:
+            raise
+        except Exception as exc:
+            raise DependencyUnavailableError("Refresh rate limiter unavailable") from exc
 
         # 2. Recalculate
         events = []
