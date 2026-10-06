@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 22:55]
+## [2026-10-06 23:00]
+
+### [Category: Dev] — F11-6 WebSocket Close Codes and Shutdown Behavior
+What changed:
+- Implemented RFC 6455 and custom application close code semantics in `playlist_service/ws.py`.
+- Graceful shutdown draining closes all active collaborative sockets with code `1001` (`WS_CLOSE_GOING_AWAY`) and reason `"Server shutting down"`, allowing clients to backoff and reconnect to sibling instances without data loss.
+- Unauthorized or permission-revoked connections are closed with code `4403` (`WS_CLOSE_FORBIDDEN`), instructing clients to halt reconnection attempts.
+- Verified in `playlist-service/tests/test_ws_shutdown.py`: initiating graceful draining emits 1001, subsequent reconnection retrieves full uncorrupted playlist state, and unauthorized attempts receive 4403.
+Why:
+- Requirement [F11-6]: clean lifecycle management enabling rolling zero-downtime deployments without socket leaks or data loss.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F11-5 Redis Pub/Sub Fan-out Across Multi-Node Clusters
 What changed:

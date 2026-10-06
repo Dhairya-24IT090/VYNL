@@ -27,8 +27,8 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 19 | F11-2-a | WebSocket connection | playlist | DONE | Handshake validates auth; 50 socket cluster limit enforced | `playlist-service/tests/test_ws_connection.py` | `2ff67c8` |
 | 20 | F11-3 | Edit message protocol | playlist | DONE | Viewer's edit rejected on open socket | `playlist-service/tests/test_ws_protocol.py` | `f711854` |
 | 21 | F11-4 | Versioned updates, conflict snapshots | playlist | DONE | Concurrent edits converge for all participants | `playlist-service/tests/test_ws_convergence.py` | `62d048c` |
-| 22 | F11-5 | Redis pub/sub fan-out | playlist | DONE | Clients on different instances see each other's edits | `playlist-service/tests/test_ws_pubsub.py` | pending |
-| 23 | F11-6 | Close codes and shutdown behavior | playlist | TODO | Rolling deploy causes reconnects without data loss | `playlist-service/tests/test_ws_shutdown.py` | |
+| 22 | F11-5 | Redis pub/sub fan-out | playlist | DONE | Clients on different instances see each other's edits | `playlist-service/tests/test_ws_pubsub.py` | `6adc8c5` |
+| 23 | F11-6 | Close codes and shutdown behavior | playlist | DONE | Rolling deploy causes reconnects without data loss | `playlist-service/tests/test_ws_shutdown.py` | pending |
 | 24 | F12-1-b | Collaborative AI trigger | playlist | TODO | Rapid editing = one suggestion job per window | `playlist-service/tests/test_collab_ai_trigger.py` | |
 | 25 | F12-3-b | Broadcast suggestions | playlist | TODO | Accepted songs added via normal versioned edit path | `playlist-service/tests/test_broadcast_suggestions.py` | |
 | 26 | F12-4 | Collaboration UI | web | TODO | Two browsers edit same playlist and stay in sync | `web/tests/collab_ui.test.tsx` | |
