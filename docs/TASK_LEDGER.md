@@ -14,16 +14,16 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 6 | F5-7 | Now-playing metadata panel | web | TODO | Renders with missing fields; updates after enrichment | `web/tests/now_playing.test.tsx` | |
 | 7 | F6-3 | Download UI | web | TODO | Works on desktop and mobile browsers | `web/tests/download.test.tsx` | |
 | 8 | F7-11 | Recommendation UI | web | TODO | Interactions appear in activity data | `web/tests/recommendations.test.tsx` | |
-| 9 | F9-3-b | Redis drafts | playlist | TODO | Drafts expire cleanly | `playlist-service/tests/test_drafts.py` | |
-| 10 | F9-4 | Save draft as playlist | playlist | TODO | Failed save leaves no partial playlist | `playlist-service/tests/test_save_draft.py` | |
+| 9 | F9-3-b | Redis drafts | playlist | DONE | Drafts expire cleanly | `playlist-service/tests/test_drafts.py` | `6f38eb2` |
+| 10 | F9-4 | Save draft as playlist | playlist | DONE | Failed save leaves no partial playlist | `playlist-service/tests/test_save_draft.py` | `9714acf` |
 | 11 | F9-5 | Generation wizard UI | web | TODO | Generate, adjust, save without leaving the flow | `web/tests/wizard.test.tsx` | |
-| 12 | F10-1 | Playlist CRUD with authz | playlist | TODO | Authz tests cover every role on every route | `playlist-service/tests/test_authz.py` | |
-| 13 | F10-2 | Optimistic locking | playlist | TODO | Two concurrent edits = one success + one conflict | `playlist-service/tests/test_optimistic_lock.py` | |
-| 14 | F10-3 | Fractional-index positions | playlist | TODO | Moving an item never rewrites the list | `playlist-service/tests/test_fractional.py` | |
-| 15 | F10-4 | Add/remove/reorder items | playlist | TODO | All operations atomic and logged | `playlist-service/tests/test_items_atomic.py` | |
-| 16 | F10-5-a-b | Playlists as playback source and context | playlist | TODO | Playback endpoint returns ordered items; context caps at 50 | `playlist-service/tests/test_playback_context.py` | |
+| 12 | F10-1 | Playlist CRUD with authz | playlist | DONE | Authz tests cover every role on every route | `playlist-service/tests/test_authz.py` | `37ae21f` |
+| 13 | F10-2 | Optimistic locking | playlist | DONE | Two concurrent edits = one success + one conflict | `playlist-service/tests/test_optimistic_lock.py` | `5f72ea4` |
+| 14 | F10-3 | Fractional-index positions | playlist | DONE | Moving an item never rewrites the list | `playlist-service/tests/test_fractional.py` | `9235907` |
+| 15 | F10-4 | Add/remove/reorder items | playlist | DONE | All operations atomic and logged | `playlist-service/tests/test_items_atomic.py` | `aea218f` |
+| 16 | F10-5-a-b | Playlists as playback source and context | playlist | DONE | Playback endpoint returns ordered items; context caps at 50 | `playlist-service/tests/test_playback_context.py` | `a90852e` |
 | 17 | F10-6 | Playlist UI | web | TODO | Stale edit shows clear message and recovers, no data loss | `web/tests/playlist_ui.test.tsx` | |
-| 18 | F11-1 | Collaborators and invites | playlist | TODO | Invite redeemable once; expired fail | `playlist-service/tests/test_invites.py` | |
+| 18 | F11-1 | Collaborators and invites | playlist | DONE | Invite redeemable once; expired fail | `playlist-service/tests/test_invites.py` | pending |
 | 19 | F11-2-a | WebSocket connection | playlist | TODO | Handshake validates auth; 50 socket cluster limit enforced | `playlist-service/tests/test_ws_connection.py` | |
 | 20 | F11-3 | Edit message protocol | playlist | TODO | Viewer's edit rejected on open socket | `playlist-service/tests/test_ws_protocol.py` | |
 | 21 | F11-4 | Versioned updates, conflict snapshots | playlist | TODO | Concurrent edits converge for all participants | `playlist-service/tests/test_ws_convergence.py` | |

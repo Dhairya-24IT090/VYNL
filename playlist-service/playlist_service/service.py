@@ -350,3 +350,95 @@ class PlaylistService:
                 "items": [str(it["song_id"]) for it in capped_items],
                 "contributors": [str(p["owner_id"])] + [str(c["user_id"]) for c in collabs],
             }
+
+    async def create_invite(
+        self,
+        actor: Actor,
+        playlist_id: str,
+        role: str,
+        invite_manager,
+    ) -> Dict[str, Any]:
+        async with self.db.transaction() as conn:
+            user_role = await self._resolve_role(conn, playlist_id, actor)
+            if user_role != "owner":
+                raise ForbiddenError("Only playlist owner can create invites")
+
+            invite_id = str(uuid.uuid4())
+            now = time.time()
+            expires_at_epoch = now + 86400  # 24 hours
+            from datetime import datetime, timezone
+            expires_at_dt = datetime.fromtimestamp(expires_at_epoch, timezone.utc)
+
+            await self.repo.create_invite(
+                conn, invite_id, playlist_id, role, actor.user_id, expires_at_dt
+            )
+            token = invite_manager.generate_token(invite_id, playlist_id, role, expires_at_epoch)
+            return {
+                "invite_id": invite_id,
+                "playlist_id": playlist_id,
+                "role": role,
+                "token": token,
+                "expires_at": expires_at_dt.isoformat(),
+            }
+
+    async def redeem_invite(
+        self,
+        actor: Actor,
+        token: str,
+        invite_manager,
+        now: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        if not actor.user_id:
+            raise ForbiddenError("Authentication required")
+
+        payload = invite_manager.verify_token(token, now=now)
+        invite_id = payload["iid"]
+        playlist_id = payload["pid"]
+        role = payload["role"]
+
+        async with self.db.transaction() as conn:
+            p = await self.repo.get_playlist(conn, playlist_id)
+            if not p:
+                raise GoneError("Invite is no longer available")
+
+            # Owner cannot redeem own invite -> 409 Conflict
+            if str(p["owner_id"]) == str(actor.user_id):
+                from service_kit.errors import ConflictError
+                raise ConflictError("Playlist owner cannot redeem own invite")
+
+            # Redeem in one atomic query
+            redeemed = await self.repo.redeem_invite(conn, invite_id, actor.user_id)
+            if not redeemed:
+                raise GoneError("Invite is no longer available")
+
+            # Add collaborator in same transaction
+            await self.repo.add_collaborator(conn, playlist_id, actor.user_id, role)
+            return {
+                "playlist_id": playlist_id,
+                "role": role,
+                "user_id": actor.user_id,
+                "status": "redeemed",
+            }
+
+    async def revoke_invite(self, actor: Actor, playlist_id: str, invite_id: str) -> bool:
+        async with self.db.transaction() as conn:
+            role = await self._resolve_role(conn, playlist_id, actor)
+            if role != "owner":
+                raise ForbiddenError("Only owner can revoke invites")
+            return await self.repo.revoke_invite(conn, invite_id)
+
+    async def update_collaborator(self, actor: Actor, playlist_id: str, user_id: str, role: str) -> bool:
+        async with self.db.transaction() as conn:
+            cur_role = await self._resolve_role(conn, playlist_id, actor)
+            if cur_role != "owner":
+                raise ForbiddenError("Only owner can manage collaborators")
+            await self.repo.add_collaborator(conn, playlist_id, user_id, role)
+            return True
+
+    async def remove_collaborator(self, actor: Actor, playlist_id: str, user_id: str) -> bool:
+        async with self.db.transaction() as conn:
+            cur_role = await self._resolve_role(conn, playlist_id, actor)
+            if cur_role != "owner":
+                raise ForbiddenError("Only owner can manage collaborators")
+            return await self.repo.remove_collaborator(conn, playlist_id, user_id)
+

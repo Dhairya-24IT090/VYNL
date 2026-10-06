@@ -4,7 +4,82 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 22:10]
+## [2026-10-06 22:30]
+
+### [Category: Dev] — F11-1 Collaborators and Invites
+What changed:
+- Implemented HMAC-SHA256 signed invite tokens with key rotation support (`KEY_ID:B64URL(PAYLOAD):B64URL(SIG)`), nonce tracking, and single-use redemption semantics in `playlist_service/invites.py`.
+- Enforced invite expiration check, revocation check, self-redemption prevention (owner cannot redeem), and concurrent race prevention (atomic single-use verification).
+- Added `POST /v1/playlists/{id}/invites` (owner only) and `POST /v1/invites/redeem` (authenticated user).
+- Verified in `playlist-service/tests/test_invites.py`: single-use token replay rejection, concurrent double-redeem race condition safety (1 success, 1 409 conflict), expired/revoked rejection, forged token rejection, and key rotation verification.
+Why:
+- Requirement [F11-1]: secure, tamper-proof invitation system for playlist collaboration.
+Bug fixed: N/A.
+Root cause: N/A.
+
+
+### [Category: Dev] — F10-5-a-b Playlists as Playback Source and Context
+What changed:
+- Implemented `/playback` endpoint returning ordered playback items supporting `from_item_id` seeking.
+- Implemented `/context` internal endpoint returning compact playlist context (capped at 50 items for LLM token budget).
+- Verified in `playlist-service/tests/test_playback_context.py`: playback items returned in strict position order; large playlists with 80+ items cap context strictly at 50 items.
+Why:
+- Requirement [F10-5-a-b]: enables playlists to serve as audio queue playback sources and prompt context for the LLM recommender.
+Bug fixed: N/A.
+Root cause: N/A.
+
+### [Category: Dev] — F9-4 Save Draft as Playlist Atomic Rollback
+What changed:
+- Implemented atomic `save_draft_as_playlist` executing playlist creation, bulk fractional-indexed item inserts, and dual outbox emissions (`playlist_generate`, `playlist_save`) within a single database transaction.
+- Post-commit, the source Redis draft is cleanly deleted.
+- Verified in `playlist-service/tests/test_save_draft.py`: simulated failures at item N rollback all state with zero partial playlists, zero orphan items, zero outbox records, and the Redis draft remains fully intact.
+Why:
+- Requirement [F9-4]: guarantees all-or-nothing draft saving without orphaned partial entities.
+Bug fixed: N/A.
+Root cause: N/A.
+
+### [Category: Dev] — F10-4 Add Remove Reorder Items Atomic and Logged
+What changed:
+- Implemented item addition, removal, and reordering within single database transactions.
+- Enforced 500-item maximum per playlist (returning 422 ValidationError beyond).
+- Emitted atomic `activity_outbox` rows (`playlist_add`, `playlist_remove`, `playlist_reorder`) on every change.
+- Verified in `playlist-service/tests/test_items_atomic.py`: injected pre-commit failures rollback all state with zero items modified, zero version increments, and zero outbox records written.
+Why:
+- Requirement [F10-4]: guarantees data consistency and infallible auditability of playlist mutations.
+Bug fixed: N/A.
+Root cause: N/A.
+
+### [Category: Dev] — F10-2 Optimistic Locking
+What changed:
+- Implemented `If-Match` version checking and atomic version bumping executed as the first statement in mutating transactions.
+- Enforced 428 Precondition Required when `If-Match` header is omitted and 412 Precondition Failed when version is stale.
+- Verified in `playlist-service/tests/test_optimistic_lock.py` with 2 and 20 concurrent edits: exactly 1 request succeeds and remaining requests receive 412 conflict, leaving version incremented by exactly 1.
+Why:
+- Requirement [F10-2]: prevents lost updates in concurrent edit scenarios.
+Bug fixed: N/A.
+Root cause: N/A.
+
+### [Category: Dev] — F10-1 Playlist CRUD with Authz Matrix
+What changed:
+- Built `playlist-service` schema migrations, domain models with `extra="forbid"`, raw SQL asyncpg repository, and `PlaylistService`.
+- Implemented service-level authorization enforcement across Owner, Editor, Viewer, and Stranger roles.
+- Strangers receive 404 (hidden existence); unpermitted authenticated roles receive 403.
+- Table-driven test suite in `playlist-service/tests/test_authz.py` verified all 28 `(role x route x method)` permutations.
+Why:
+- Requirement [F10-1]: ensures strict, defense-in-depth authorization enforced directly within the service domain.
+Bug fixed: N/A.
+Root cause: N/A.
+
+### [Category: Dev] — F10-3 Fractional-Index Positions
+What changed:
+- Implemented pure Base-62 fractional indexing between(a, b) in `playlist-service/playlist_service/fractional.py`.
+- Enforced strict ASCII sort order matching PostgreSQL `COLLATE "C"`.
+- Added `rebalance_positions` to reset bloated keys.
+- Verified with unit tests and Hypothesis property-based testing in `playlist-service/tests/test_fractional.py`: 10,000 random operations without order or uniqueness violation, moving an item never rewrites other rows.
+Why:
+- Requirement [F10-3]: enables O(1) row updates for item moves without table-wide position rewrites.
+Bug fixed: N/A.
+Root cause: N/A.
 
 ### [Category: Dev] — Project Architecture Setup & Living Documentation
 What changed:
