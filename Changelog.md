@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 22:45]
+## [2026-10-06 22:50]
+
+### [Category: Dev] — F11-4 Versioned Updates and Conflict Snapshots
+What changed:
+- Implemented optimistic concurrency checking and conflict snapshot emission for WebSocket edits in `playlist_service/ws.py`.
+- When an edit arrives with a stale `base_version`, the server returns a `version_conflict` snapshot containing the current version and item state (`{"type": "snapshot", "code": "version_conflict", "version": ...}`).
+- Added `resync` operation support to immediately deliver authoritative snapshots on client demand.
+- Verified in `playlist-service/tests/test_ws_convergence.py`: stale base versions yield conflict snapshots; resync returns fresh state; 5-client concurrent collaborative session successfully applies edits and converges all clients to identical version (6) and item set.
+Why:
+- Requirement [F11-4]: ensures eventual consistency and convergence across all concurrent collaborative editors.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F11-3 Edit Message Protocol and Viewer Rejection
 What changed:
