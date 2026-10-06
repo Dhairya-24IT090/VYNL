@@ -41,14 +41,14 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 33 | F17-2 | Aggregation | wrap | DONE | Output matches hand-calculated fixture | `wrap-service/tests/test_aggregator.py` | `24ecdab` |
 | 34 | F17-3 | Scheduled generation | wrap | DONE | Reruns never double-compute | `wrap-service/tests/test_scheduler.py` | `5e2435f` |
 | 35 | F17-4 | Wrap endpoints | wrap | DONE | Refresh limit returns 429 + Retry-After | `wrap-service/tests/test_wrap_endpoints.py` | `6e795a5` |
-| 36 | F17-5 | Wrap caching | wrap | DONE | Repeated reads hit cache | `wrap-service/tests/test_wrap_cache.py` | pending |
+| 36 | F17-5 | Wrap caching | wrap | DONE | Repeated reads hit cache | `wrap-service/tests/test_wrap_cache.py` | `2c2d05b` |
 | 37 | F17-6 | Wrap UI | web | TODO | Renders correctly for little or no history | `web/tests/wrap_ui.test.tsx` | |
 | 38 | F18-1-a | App shell and API client | web | TODO | Traceparent injected, CSRF attached, SSE reconnection | `web/tests/app_shell.test.tsx` | |
 | 39 | F18-2 | Player and queue UI | web | TODO | Playback persists across route changes | `web/tests/player_queue.test.tsx` | |
 | 40 | F18-3 | Core pages | web | TODO | Every documented feature has a reachable page | `web/tests/core_pages.test.tsx` | |
 | 41 | F18-4 | Real-time clients | web | TODO | Network drops recover without page refresh | `web/tests/realtime_client.test.tsx` | |
 | 42 | F18-5 | Responsiveness and accessibility | web | TODO | Key flows pass an accessibility audit | `web/tests/a11y.test.tsx` | |
-| 43 | F19-4-a-b | Retry policy | playlist, wrap | TODO | Exp backoff, full jitter, circuit breaker probe | `shared/service-kit/tests/test_resilience.py` | |
+| 43 | F19-4-a-b | Retry policy | playlist, wrap | DONE | Exp backoff, full jitter, circuit breaker probe | `shared/service-kit/tests/test_resilience.py` | pending |
 | 44 | F19-5-c-b | Chaos tests | playlist, wrap | TODO | Results documented and repeatable | `scripts/chaos.py`, `docs/CHAOS_RESULTS.md` | |
 | 45 | F19-6-c-b | Error mapping | playlist, wrap | TODO | Every service passes shared contract test | `shared/contracts/error_contract/test_errors.py` | |
 | 46 | F20-1-c-b | Transport and secret hygiene | playlist, wrap | TODO | Log audit finds no sensitive values | `scripts/log_audit.py` | |

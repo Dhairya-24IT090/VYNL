@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:35]
+## [2026-10-06 23:40]
+
+### [Category: Dev] — F19-4-a-b Exponential Backoff, Full Jitter, and Circuit Breaker Probing
+What changed:
+- Implemented `CircuitBreaker` and `retry_with_backoff` in `shared/service-kit/service_kit/resilience.py`.
+- Formulated exponential backoff with full jitter formula (`uniform(0, min(max_delay, base_delay * 2**(attempt - 1)))`), preventing thundering herd problems on downstream dependencies.
+- Implemented state machine for circuit breaker (`CLOSED` -> `OPEN` -> `HALF_OPEN` -> `CLOSED`), fast-failing open circuits with `DependencyUnavailableError` (503) and `Retry-After`, and probing downstream recovery via single canary calls during `HALF_OPEN`.
+- Verified in `shared/service-kit/tests/test_resilience.py`: jitter bounds across retry attempts, retry exhaustion raising original exception, consecutive failure tripping, fail-fast rejection, and single-probe recovery/re-tripping.
+Why:
+- Requirement [F19-4-a-b]: fault isolation preventing cascading failures across microservices.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F17-5 Wrap Caching Layer and Dual TTL Policies
 What changed:
