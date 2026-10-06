@@ -30,12 +30,20 @@ class PlaylistService:
             raise NotFoundError("Playlist not found")
         return role
 
+    async def get_user_role(self, actor: Actor, playlist_id: str) -> Optional[str]:
+        if not actor.user_id:
+            return None
+        async with self.db.connection() as conn:
+            return await self.repo.get_membership_role(conn, playlist_id, actor.user_id)
+
     async def get_playlist(self, actor: Actor, playlist_id: str) -> Dict[str, Any]:
         async with self.db.connection() as conn:
             role = await self._resolve_role(conn, playlist_id, actor)
             p = await self.repo.get_playlist(conn, playlist_id)
             items = await self.repo.get_playlist_items(conn, playlist_id)
+            collabs = await self.repo.list_collaborators(conn, playlist_id)
             p["items"] = items
+            p["collaborators"] = collabs
             p["user_role"] = role
             return p
 

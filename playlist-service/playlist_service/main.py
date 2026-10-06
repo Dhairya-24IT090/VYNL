@@ -14,7 +14,9 @@ from playlist_service.repository import PlaylistRepository
 from playlist_service.routes.drafts import create_drafts_router
 from playlist_service.routes.internal import create_internal_router
 from playlist_service.routes.playlists import create_playlists_router
+from playlist_service.routes.ws import create_ws_router
 from playlist_service.service import PlaylistService
+from playlist_service.ws import CollabManager
 
 def create_app(
     settings: PlaylistSettings,
@@ -28,6 +30,11 @@ def create_app(
     sse_mgr = SSEManager(redis_manager._client)
     repo = PlaylistRepository()
     service = PlaylistService(db_manager, repo, draft_store)
+    collab_mgr = CollabManager(
+        service=service,
+        session_verifier=session_verifier,
+        redis_client=redis_manager._client,
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -35,6 +42,7 @@ def create_app(
         yield
         # Shutdown
         await shutdown.initiate_shutdown()
+        await collab_mgr.close_all_draining()
         await db_manager.close()
         await redis_manager.close()
 
@@ -66,5 +74,6 @@ def create_app(
     app.include_router(create_playlists_router(service))
     app.include_router(create_drafts_router(draft_store))
     app.include_router(create_internal_router(service, draft_store, sse_mgr))
+    app.include_router(create_ws_router(collab_mgr))
 
     return app

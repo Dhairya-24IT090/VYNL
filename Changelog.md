@@ -4,7 +4,21 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 22:30]
+## [2026-10-06 22:40]
+
+### [Category: Dev] — F11-2-a WebSocket Connection Handshake and Cluster Limit
+What changed:
+- Built `playlist_service/ws.py` with `CollabConnection` and `CollabManager` handling connection state, handshake authentication, and presence tracking.
+- Created `playlist_service/routes/ws.py` mounting `WS /v1/playlists/{playlist_id}/live`.
+- Handshake auth strictly enforces session authentication and playlist membership: missing tokens, expired/invalid sessions, and strangers without role access are rejected with WebSocket close code `4403` (Forbidden).
+- Cluster-wide connection limiting enforces max 50 active sockets per playlist via Lua atomic script / counter; exceeding connections are rejected with close code `4429` (`WS_CLOSE_LIMIT_EXCEEDED`).
+- Integrated into `main.py` application lifespan with graceful connection draining on shutdown.
+- Verified in `playlist-service/tests/test_ws_connection.py`: unauthenticated rejection, invalid session rejection, stranger rejection, owner/editor/viewer connection acceptance with snapshot payload, and 50-socket cluster limit enforcement with recovery upon slot release.
+Why:
+- Requirement [F11-2-a]: secure collaborative real-time connection foundation with strict resource limits.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F11-1 Collaborators and Invites
 What changed:
