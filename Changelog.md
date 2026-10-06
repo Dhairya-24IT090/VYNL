@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:25]
+## [2026-10-06 23:30]
+
+### [Category: Dev] — F17-4 Monthly Wrap Endpoints and 429 Retry-After Enforcement
+What changed:
+- Implemented `GET /v1/wrap/{period}` and `POST /v1/wrap/current/refresh` in `wrap_service/routes/wrap.py` and `wrap_service/service.py`.
+- Enforced strict authorization per `docs/AUTHZ.md`: users can view only their own wrap (200), strangers accessing another user's wrap receive 403 Forbidden, and unauthenticated requests receive 401 Unauthorized.
+- Implemented on-demand refresh with rate limiting: refreshing current wrap returns 202 Accepted with `Location: /v1/wrap/{period}`; exceeding the 60-second cooldown rate limit returns `429 Too Many Requests` with a mandatory `Retry-After: <seconds>` response header.
+- Verified in `wrap-service/tests/test_wrap_endpoints.py`: 200 on existing wrap, 404 on missing wrap, 403 on stranger access, 401 on unauthenticated, and 429 with `Retry-After` on burst refresh attempts.
+Why:
+- Requirement [F17-4]: secure API delivery with defense against refresh flooding and DDOS.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F17-3 Scheduled Wrap Generation and Idempotent Batches
 What changed:
