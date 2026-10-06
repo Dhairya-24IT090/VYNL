@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:00]
+## [2026-10-06 23:05]
+
+### [Category: Dev] — F12-1-b Collaborative AI Trigger with Window Deduplication
+What changed:
+- Implemented collaborative AI trigger in `playlist_service/ws.py` integrating `JobQueue` from `service_kit.jobs`.
+- Supported window-based (`window_sec`) and version-based deduplication keys (`vynl:dedupe:collab_suggest:{playlist_id}:{window_bucket}`).
+- Atomic Lua `SET NX EX` prevents redundant suggestion jobs during rapid edits.
+- Verified in `playlist-service/tests/test_collab_ai_trigger.py` with real Redis: 10 rapid burst edits on a collaborative playlist enqueue exactly 1 job to `vynl:jobs:collab_suggest` and drop 9 duplicate attempts; independent playlists enqueue independently.
+Why:
+- Requirement [F12-1-b]: debounces and throttles downstream LLM inference workload during active real-time editing sessions.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F11-6 WebSocket Close Codes and Shutdown Behavior
 What changed:

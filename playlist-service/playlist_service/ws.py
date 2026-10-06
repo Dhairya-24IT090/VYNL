@@ -386,21 +386,29 @@ class CollabManager:
             "client_msg_id": client_msg_id
         })
 
-    async def trigger_ai_suggestions_if_needed(self, playlist_id: str, version: int) -> bool:
+    async def trigger_ai_suggestions_if_needed(self, playlist_id: str, version: int, window_sec: Optional[int] = 10) -> Optional[str]:
         """
         Enqueues collab_suggest job to Redis Streams with atomic deduplication.
+        Rapid edits within window_sec produce at most 1 suggestion job per window.
         """
         if not self.jobs:
-            return False
+            return None
 
-        dedupe_key = f"collab_suggest:{playlist_id}:{version}"
-        enqueued = await self.jobs.enqueue(
+        import time
+        if window_sec:
+            window_bucket = int(time.time() // window_sec)
+            dedupe_key = f"vynl:dedupe:collab_suggest:{playlist_id}:{window_bucket}"
+            ttl = window_sec * 2
+        else:
+            dedupe_key = f"vynl:dedupe:collab_suggest:{playlist_id}:{version}"
+            ttl = 60
+
+        return await self.jobs.enqueue(
             job_name="collab_suggest",
             payload={"playlist_id": playlist_id, "version": version},
             dedupe_key=dedupe_key,
-            dedupe_ttl=60
+            dedupe_ttl=ttl,
         )
-        return enqueued
 
     async def add_suggestion(self, playlist_id: str, suggestion_id: str, song_id: str, title: str, artist: str, reason: str = "") -> None:
         """
