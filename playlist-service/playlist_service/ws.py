@@ -319,8 +319,13 @@ class CollabManager:
                     # If suggestion_id is provided, resolve song_id and mark accepted
                     if suggestion_id and conn.playlist_id in self._suggestions and suggestion_id in self._suggestions[conn.playlist_id]:
                         sug = self._suggestions[conn.playlist_id][suggestion_id]
-                        song_id = sug["song_id"]
+                        if not song_id:
+                            song_id = sug["song_id"]
                         sug["status"] = "accepted"
+                        await self.broadcast(conn.playlist_id, {
+                            "type": "suggestions",
+                            "suggestions": list(self._suggestions[conn.playlist_id].values())
+                        })
 
                     res = await self.service.add_item(
                         actor=actor,

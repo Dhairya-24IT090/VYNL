@@ -4,7 +4,21 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:05]
+## [2026-10-06 23:10]
+
+### [Category: Dev] — F12-3-b Broadcast AI Suggestions and Editor Accept/Reject Lifecycle
+What changed:
+- Implemented real-time AI suggestions broadcast and lifecycle management in `playlist_service/ws.py`.
+- Connected sockets receive real-time `suggestions` frame broadcasts upon generation.
+- Implemented editor accept flow: editor sends `{"op": "add", "suggestion_id": "...", "base_version": ...}`, which resolves suggested song, marks suggestion status `accepted`, adds song through standard versioned edit path (`service.add_item`), broadcasts `op_applied` with incremented version, and broadcasts updated suggestions state.
+- Implemented editor reject flow: editor sends `{"op": "suggestion.reject", "suggestion_id": "..."}`, marking suggestion status `rejected` and broadcasting update without mutating playlist version.
+- Enforced role permissions: viewers attempting to accept or reject suggestions are rejected with error frame `{"type": "error", "code": "forbidden"}`.
+- Verified in `playlist-service/tests/test_broadcast_suggestions.py`: complete pending -> accepted -> in-playlist lifecycle, pending -> rejected lifecycle, and viewer authorization guard.
+Why:
+- Requirement [F12-3-b]: seamless in-session AI suggestion discovery and interactive review.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F12-1-b Collaborative AI Trigger with Window Deduplication
 What changed:
