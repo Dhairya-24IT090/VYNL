@@ -69,37 +69,17 @@ This repository encompasses Dhairya's ownership slice: **50 tasks** across three
 
 ### 4.1 Dev
 - **Implemented**:
-  - Phase 1 architectural documents, contracts, authorization matrix, error mappings, deletion matrices, and living documentation.
-  - Completed backend tasks (22/50):
-    - F10-3 (Fractional indexing, commit 9235907)
-    - F10-1 (Playlist CRUD with authz, commit 37ae21f)
-    - F10-2 (Optimistic locking 428/412, commit 5f72ea4)
-    - F10-4 (Add/remove/reorder items atomic + 500 cap, commit aea218f)
-    - F9-3-b (Redis drafts TTL and caps, commit 6f38eb2)
-    - F9-4 (Save draft as playlist atomic rollback, commit 9714acf)
-    - F10-5-a-b (Playlists as playback source/context <=50 tokens, commit a90852e)
-    - F11-1 (Collaborators and HMAC single-use invites, commit 7523d34)
-    - F11-2-a (WebSocket connection auth & 50-socket cluster limit, commit 2ff67c8)
-    - F11-3 (Edit message protocol & role-enforced frames, commit f711854)
-    - F11-4 (Versioned updates & 5-client convergence, commit 62d048c)
-    - F11-5 (Redis pub/sub multi-node fan-out, commit 6adc8c5)
-    - F11-6 (Close codes 1001/4403 & graceful draining, commit 1072658)
-    - F12-1-b (Collaborative AI trigger deduplication, commit 2e82849)
-    - F12-3-b (Broadcast suggestions & accept/reject, commit 11b94d7)
-    - F17-1 (Metric definitions & pure engine, commit 0b4f1f6)
-    - F17-2 (Monthly wrap aggregation golden fixtures, commit 24ecdab)
-    - F17-3 (Scheduled generation leader election & 500-user batches, commit 5e2435f)
-    - F17-4 (Wrap endpoints & 429 Retry-After, commit 6e795a5)
-    - F17-5 (Wrap caching layer & dual TTL policies, commit 2c2d05b)
-    - F19-4-a-b (Retry backoff, full jitter, circuit breaker, commit a66013a)
-    - F19-6-c-b (Unified error mapping contract, commit 433ae1a)
-- **In-Progress**: Cross-cutting backend tasks (F20-2-c-b, F20-5-c-b, O-1-c-b, O-2-c-b, F19-5-c-b, F20-1-c-b, P-5-c-b).
-- **Planned**: React 18 + Vite frontend client (`web`) and end-to-end verification.
+  - Full autonomous implementation of all **50 tasks** across `playlist-service`, `wrap-service`, `web`, `shared/service-kit`, `shared/contracts`, and `infra/`.
+  - Master ledger (`docs/TASK_LEDGER.md`) fully resolved to **50/50 DONE**.
+  - All 29 backend/infra/cross-cutting tasks passing 118 automated pytest unit, integration, resilience, and contract tests.
+  - All 21 frontend tasks passing 48 Vitest suites with 100% green coverage, verified zero-error TypeScript + Vite production build.
+  - Verification scripts complete: `scripts/rolling_restart_test.sh`, `scripts/chaos.py` (documented in `docs/CHAOS_RESULTS.md`), `scripts/log_audit.py` (0 canary leaks).
 
-### 4.2 UI/Motion (per UISKILL.md)
+### 4.2 UI/Motion (per UISKILL.md & Design.md)
 - **Palette**: `#0F0F0F` background, white foreground with translucency (80%, 60%, 8%), soft glass fills (`backdrop-filter: blur(10px - 27px)` with solid fallback).
 - **Typography**: Display font `Zen Dots` (wordmark, hero moments); Body font `Urbanist` (labels, rows, meta).
 - **Motion Budget**: Restrained functional transitions; standard durations (100ms, 150ms, 250ms, 400ms); `prefers-reduced-motion` fallbacks across all motion primitives.
+- **Frontend Core Components**: NowPlayingBar, SearchUI, DownloadUI, RecommendationUI, GenerationWizard, PlaylistUI (412 conflict recovery), CollaborationUI, LyricsScreen (LRC sync + magic byte validator), WrapUI (rich stats + empty state), PerformanceDashboard (p95 vs SLA targets), App Shell (traceparent injection, CSRF attachment, SSE/WS exponential backoff).
 
 ### 4.3 Audit Findings & Security Posture
 - CSRF double-submit token checking on all state-changing endpoints.

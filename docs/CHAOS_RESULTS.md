@@ -1,6 +1,6 @@
 # VYNL Chaos Testing Results (`docs/CHAOS_RESULTS.md`)
 
-**Last Executed**: `2026-10-06 17:53:38 UTC`  
+**Last Executed**: `2026-10-06 18:36:48 UTC`  
 **Test Suite**: `scripts/chaos.py` (Repeatable automated chaos runner)  
 **Status**: **ALL INVARIANTS PASSED (3/3)**
 
@@ -33,7 +33,7 @@
 - **Invariants Verified**: Yes
 - **Execution Metrics**:
   - `attempts_required`: `3`
-  - `backoff_elapsed_seconds`: `0.0308`
+  - `backoff_elapsed_seconds`: `0.0475`
   - `recovered_cleanly`: `True`
 
 ### Connection Saturation & Deadline Exceeded
