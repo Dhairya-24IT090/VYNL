@@ -55,4 +55,4 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 47 | F20-2-c-b | Service-level authorization | playlist, wrap | DONE | Direct service calls with wrong user rejected | `shared/service-kit/tests/test_service_authz.py` | `b1b8591` |
 | 48 | F20-5-c-b | Deletion fan-out | playlist, wrap | DONE | Deleted user leaves no personal data | `tests/test_deletion_fanout.py` | `3f00faa` |
 | 49 | O-1-c-b | Distributed tracing | playlist, wrap | DONE | One trace spans browser through worker | `tests/test_tracing.py` | `b5c1cb1` |
-| 50 | O-2-c-b | Metrics | playlist, wrap | TODO | Each metric scraped and labeled consistently | `tests/test_metrics.py` | |
+| 50 | O-2-c-b | Metrics | playlist, wrap | DONE | Each metric scraped and labeled consistently | `tests/test_metrics.py` | `e172c8e` |
