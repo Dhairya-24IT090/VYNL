@@ -50,7 +50,7 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 42 | F18-5 | Responsiveness and accessibility | web | TODO | Key flows pass an accessibility audit | `web/tests/a11y.test.tsx` | |
 | 43 | F19-4-a-b | Retry policy | playlist, wrap | DONE | Exp backoff, full jitter, circuit breaker probe | `shared/service-kit/tests/test_resilience.py` | `a66013a` |
 | 44 | F19-5-c-b | Chaos tests | playlist, wrap | TODO | Results documented and repeatable | `scripts/chaos.py`, `docs/CHAOS_RESULTS.md` | |
-| 45 | F19-6-c-b | Error mapping | playlist, wrap | TODO | Every service passes shared contract test | `shared/contracts/error_contract/test_errors.py` | |
+| 45 | F19-6-c-b | Error mapping | playlist, wrap | DONE | Every service passes shared contract test | `shared/contracts/error_contract/test_errors.py` | `433ae1a` |
 | 46 | F20-1-c-b | Transport and secret hygiene | playlist, wrap | TODO | Log audit finds no sensitive values | `scripts/log_audit.py` | |
 | 47 | F20-2-c-b | Service-level authorization | playlist, wrap | TODO | Direct service calls with wrong user rejected | `shared/service-kit/tests/test_service_authz.py` | |
 | 48 | F20-5-c-b | Deletion fan-out | playlist, wrap | TODO | Deleted user leaves no personal data | `tests/test_deletion_fanout.py` | |

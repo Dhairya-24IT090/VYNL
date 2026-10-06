@@ -4,6 +4,20 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
+## [2026-10-06 23:45]
+
+### [Category: Dev] — F19-6-c-b Unified Error Mapping Contract Across Services
+What changed:
+- Implemented `register_error_handlers(app: FastAPI)` in `shared/service-kit/service_kit/errors.py`.
+- Formatted `RequestValidationError` (422) and `AppException` into strict Rev2 Appendix B error JSON responses (`{"error": {"code": "...", "message": "...", "fields": [...]}, "request_id": "<uuid>"}`).
+- Updated `playlist-service` and `wrap-service` application factories to register global error handlers.
+- Updated `list_playlists` in `playlist_service/service.py` to require authentication, raising `UnauthorizedError` (401) when actor is anonymous.
+- Verified in `shared/contracts/error_contract/test_errors.py` against both `playlist-service` and `wrap-service`: invalid request payload yields 422 standard schema, unauthenticated yields 401 standard schema, hidden resource yields 404, with zero sensitive tracebacks or internal query leaks.
+Why:
+- Requirement [F19-6-c-b]: cross-service API response consistency, security hygiene, and error contract enforcement.
+Bug fixed: Unhandled validation errors previously bypassed middleware formatting.
+Root cause: FastAPI's default exception handler took precedence over Starlette middleware for body validation failures.
+
 ## [2026-10-06 23:40]
 
 ### [Category: Dev] — F19-4-a-b Exponential Backoff, Full Jitter, and Circuit Breaker Probing

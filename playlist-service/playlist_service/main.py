@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import Optional
 from fastapi import FastAPI
 from service_kit.auth import InMemorySessionVerifier, SessionVerifier
 from service_kit.db import DatabaseManager
@@ -25,11 +26,12 @@ def create_app(
     redis_manager: RedisManager,
     session_verifier: SessionVerifier,
     draft_store: DraftStore,
+    repo: Optional[PlaylistRepository] = None,
 ) -> FastAPI:
     metrics = MetricsRegistry(service_name=settings.SERVICE_NAME)
     shutdown = GracefulShutdownManager(service_name=settings.SERVICE_NAME)
     sse_mgr = SSEManager(redis_manager._client)
-    repo = PlaylistRepository()
+    repo = repo or PlaylistRepository()
     service = PlaylistService(db_manager, repo, draft_store)
     collab_mgr = CollabManager(
         service=service,
