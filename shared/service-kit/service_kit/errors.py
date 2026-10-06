@@ -115,3 +115,52 @@ def create_error_response(
         content=content,
         headers=resp_headers,
     )
+
+def _extract_request_id(request: Any) -> str:
+    ctx = getattr(getattr(request, "state", None), "context", None)
+    if ctx and getattr(ctx, "request_id", None):
+        return ctx.request_id
+    state_req_id = getattr(getattr(request, "state", None), "request_id", None)
+    if state_req_id:
+        return state_req_id
+    hdr = getattr(request, "headers", {}).get("X-Request-ID")
+    if hdr:
+        return hdr
+    import uuid
+    return str(uuid.uuid4())
+
+def register_error_handlers(app: Any) -> None:
+    from fastapi.exceptions import RequestValidationError
+
+    @app.exception_handler(AppException)
+    async def app_exception_handler(request: Any, exc: AppException):
+        req_id = _extract_request_id(request)
+        return create_error_response(
+            status_code=exc.status_code,
+            code=exc.code,
+            message=exc.message,
+            request_id=req_id,
+            fields=exc.fields,
+            headers=exc.headers,
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Any, exc: RequestValidationError):
+        req_id = _extract_request_id(request)
+        fields = []
+        for err in exc.errors():
+            loc = err.get("loc", [])
+            clean_loc = [str(x) for x in loc if x not in ("body",)]
+            field_name = ".".join(clean_loc) if clean_loc else "body"
+            fields.append({
+                "field": field_name,
+                "issue": str(err.get("msg", "Invalid value")),
+            })
+        return create_error_response(
+            status_code=422,
+            code="validation_error",
+            message="Validation failed",
+            request_id=req_id,
+            fields=fields,
+        )
+

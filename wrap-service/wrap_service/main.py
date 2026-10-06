@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from service_kit.auth import SessionVerifier
 from service_kit.db import DatabaseManager
+from service_kit.errors import register_error_handlers
 from service_kit.lifecycle import GracefulShutdownManager
 from service_kit.middleware import Flow0Middleware
 from service_kit.observability import MetricsRegistry, create_health_router
@@ -47,6 +48,7 @@ def create_app(
         version="1.0.0",
         lifespan=lifespan,
     )
+    register_error_handlers(app)
 
     # Attach Flow 0 middleware
     app.add_middleware(

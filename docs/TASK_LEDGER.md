@@ -48,7 +48,7 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 40 | F18-3 | Core pages | web | TODO | Every documented feature has a reachable page | `web/tests/core_pages.test.tsx` | |
 | 41 | F18-4 | Real-time clients | web | TODO | Network drops recover without page refresh | `web/tests/realtime_client.test.tsx` | |
 | 42 | F18-5 | Responsiveness and accessibility | web | TODO | Key flows pass an accessibility audit | `web/tests/a11y.test.tsx` | |
-| 43 | F19-4-a-b | Retry policy | playlist, wrap | DONE | Exp backoff, full jitter, circuit breaker probe | `shared/service-kit/tests/test_resilience.py` | pending |
+| 43 | F19-4-a-b | Retry policy | playlist, wrap | DONE | Exp backoff, full jitter, circuit breaker probe | `shared/service-kit/tests/test_resilience.py` | `a66013a` |
 | 44 | F19-5-c-b | Chaos tests | playlist, wrap | TODO | Results documented and repeatable | `scripts/chaos.py`, `docs/CHAOS_RESULTS.md` | |
 | 45 | F19-6-c-b | Error mapping | playlist, wrap | TODO | Every service passes shared contract test | `shared/contracts/error_contract/test_errors.py` | |
 | 46 | F20-1-c-b | Transport and secret hygiene | playlist, wrap | TODO | Log audit finds no sensitive values | `scripts/log_audit.py` | |

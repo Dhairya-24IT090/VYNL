@@ -7,6 +7,7 @@ from service_kit.errors import (
     NotFoundError,
     PreconditionFailedError,
     PreconditionRequiredError,
+    UnauthorizedError,
     ValidationError,
     GoneError,
 )
@@ -49,7 +50,7 @@ class PlaylistService:
 
     async def list_playlists(self, actor: Actor) -> List[Dict[str, Any]]:
         if not actor.user_id:
-            return []
+            raise UnauthorizedError("Authentication required")
         async with self.db.connection() as conn:
             return await self.repo.list_user_playlists(conn, actor.user_id)
 
