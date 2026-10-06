@@ -4,7 +4,18 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:10]
+## [2026-10-06 23:15]
+
+### [Category: Dev] — F17-1 Wrap Metric Definitions and Pure Computation Engine
+What changed:
+- Implemented pure computation engine `wrap_service/metrics_defs.py` with zero network and database dependencies.
+- Formulated exact mathematical rules: strict UTC `[period_start, next_month_start)` temporal boundaries, 30,000ms counted play precision threshold, dual classification for explicit skips >= 30,000ms, replay counting (`max(0, plays - 1)`), 12-month historical artist exclusion window boundary for discovery, longest daily active streak, peak hour and 24h / 7d histograms, and empty history payload formatting.
+- Verified in `wrap-service/tests/test_metrics_defs.py`: 30s threshold boundaries (29,999 vs 30,000 ms), skip/dual classifications, UTC month and leap year boundaries, loop repeat counts, newly discovered artist exclusion window precision, longest streak days, and empty periods.
+Why:
+- Requirement [F17-1]: authoritative and deterministic monthly listening analytics engine.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F12-3-b Broadcast AI Suggestions and Editor Accept/Reject Lifecycle
 What changed:

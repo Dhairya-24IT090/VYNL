@@ -30,14 +30,14 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 22 | F11-5 | Redis pub/sub fan-out | playlist | DONE | Clients on different instances see each other's edits | `playlist-service/tests/test_ws_pubsub.py` | `6adc8c5` |
 | 23 | F11-6 | Close codes and shutdown behavior | playlist | DONE | Rolling deploy causes reconnects without data loss | `playlist-service/tests/test_ws_shutdown.py` | `1072658` |
 | 24 | F12-1-b | Collaborative AI trigger | playlist | DONE | Rapid editing = one suggestion job per window | `playlist-service/tests/test_collab_ai_trigger.py` | `2e82849` |
-| 25 | F12-3-b | Broadcast suggestions | playlist | DONE | Accepted songs added via normal versioned edit path | `playlist-service/tests/test_broadcast_suggestions.py` | pending |
+| 25 | F12-3-b | Broadcast suggestions | playlist | DONE | Accepted songs added via normal versioned edit path | `playlist-service/tests/test_broadcast_suggestions.py` | `11b94d7` |
 | 26 | F12-4 | Collaboration UI | web | TODO | Two browsers edit same playlist and stay in sync | `web/tests/collab_ui.test.tsx` | |
 | 27 | F13-3 | Client lyric sync | web | TODO | Seeking updates highlighted line instantly | `web/tests/lyrics_sync.test.tsx` | |
 | 28 | F14-1 | Pre-designed backdrops | web | TODO | Lyrics readable on every backdrop | `web/tests/backdrops.test.tsx` | |
 | 29 | F14-2-b | Custom backdrop upload | web | TODO | Disguised non-images rejected | `web/tests/backdrop_upload.test.tsx` | |
 | 30 | F14-4 | Lyrics screen | web | TODO | Works end to end on desktop and phone | `web/tests/lyrics_screen.test.tsx` | |
 | 31 | F15-4 | Client event buffer | web | TODO | Closing the tab does not lose events | `web/tests/event_buffer.test.tsx` | |
-| 32 | F17-1 | Metric definitions | wrap, docs | TODO | Definitions in docs + edge-case unit tests | `wrap-service/tests/test_metrics_defs.py` | |
+| 32 | F17-1 | Metric definitions | wrap, docs | DONE | Definitions in docs + edge-case unit tests | `wrap-service/tests/test_metrics_defs.py` | pending |
 | 33 | F17-2 | Aggregation | wrap | TODO | Output matches hand-calculated fixture | `wrap-service/tests/test_aggregator.py` | |
 | 34 | F17-3 | Scheduled generation | wrap | TODO | Reruns never double-compute | `wrap-service/tests/test_scheduler.py` | |
 | 35 | F17-4 | Wrap endpoints | wrap | TODO | Refresh limit returns 429 + Retry-After | `wrap-service/tests/test_wrap_endpoints.py` | |
