@@ -4,7 +4,18 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:15]
+## [2026-10-06 23:20]
+
+### [Category: Dev] — F17-2 Monthly Wrap Aggregator and Golden Fixture Verification
+What changed:
+- Implemented `WrapAggregator` in `wrap_service/aggregation.py` integrating daily rollups and raw activity streams into complete Monthly Wrap payloads matching `docs/WRAP_PAYLOAD.md`.
+- Evaluated multi-artist equal attribution, genre aggregation, streak tracking, and 12-month historical artist lookups.
+- Verified in `wrap-service/tests/test_aggregator.py`: exact match against hand-calculated golden fixtures across total listening time (260,000ms), 5 counted plays, 2 skips (skip rate 0.286), unique entity counts, newly discovered artists, streaks, peak hours, and daily rollups.
+Why:
+- Requirement [F17-2]: deterministic data aggregation ensuring identical analytics across all executions.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F17-1 Wrap Metric Definitions and Pure Computation Engine
 What changed:
