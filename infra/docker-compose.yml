@@ -107,7 +107,7 @@ services:
       context: ..
       dockerfile: infra/web.Dockerfile
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -116,7 +116,7 @@ services:
   certgen:
     image: alpine:3.20
     entrypoint: ["/bin/sh", "-ec"]
-    command: ["apk add --no-cache openssl >/dev/null; test -s /certs/vynl.pem || (openssl req -x509 -newkey rsa:3072 -sha256 -nodes -days 365 -keyout /tmp/key.pem -out /tmp/cert.pem -subj '/CN=localhost' -addext 'subjectAltName=DNS:localhost,DNS:vynl.local,IP:127.0.0.1' >/dev/null 2>&1; cat /tmp/cert.pem /tmp/key.pem > /certs/vynl.pem; chmod 600 /certs/vynl.pem)"]
+    command: ["apk add --no-cache openssl >/dev/null; test -s /certs/vynl.pem || (openssl req -x509 -newkey rsa:3072 -sha256 -nodes -days 365 -keyout /tmp/key.pem -out /tmp/cert.pem -subj '/CN=localhost' -addext 'subjectAltName=DNS:localhost,DNS:vynl.local,IP:127.0.0.1' >/dev/null 2>&1; cat /tmp/cert.pem /tmp/key.pem > /certs/vynl.pem; chmod 644 /certs/vynl.pem)"]
     volumes: ["tlscerts:/certs"]
     networks: [vynl]
 
@@ -141,7 +141,7 @@ services:
     networks: [vynl]
 
   minio:
-    image: minio/minio:RELEASE.2025-02-07T23-21-09Z
+    image: cgr.dev/chainguard/minio:latest
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: vynl-dev
