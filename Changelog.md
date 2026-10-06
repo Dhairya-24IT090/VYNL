@@ -4,7 +4,20 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:20]
+## [2026-10-06 23:25]
+
+### [Category: Dev] — F17-3 Scheduled Wrap Generation and Idempotent Batches
+What changed:
+- Implemented `WrapScheduler` in `wrap_service/scheduler.py` managing monthly batch wrap computation.
+- Integrated distributed leader election guard to ensure single runner across multi-replica deployments.
+- Implemented 500-user keyset batch pagination (`WHERE id > :last_id ORDER BY id ASC LIMIT 500`).
+- Implemented strict idempotency checks (`has_final_wrap`): reruns skip completed users with zero double-computation.
+- Verified in `wrap-service/tests/test_scheduler.py`: leader election halts non-leader replicas; 1,250 users processed across 3 keyset batches (500 + 500 + 250); reruns process 0 users and skip 1,250 with zero database changes.
+Why:
+- Requirement [F17-3]: safe, scalable, and crash-resilient automated monthly wrap generation.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F17-2 Monthly Wrap Aggregator and Golden Fixture Verification
 What changed:

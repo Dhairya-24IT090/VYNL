@@ -38,8 +38,8 @@ Status values: `TODO`, `IN_PROGRESS`, `DONE`.
 | 30 | F14-4 | Lyrics screen | web | TODO | Works end to end on desktop and phone | `web/tests/lyrics_screen.test.tsx` | |
 | 31 | F15-4 | Client event buffer | web | TODO | Closing the tab does not lose events | `web/tests/event_buffer.test.tsx` | |
 | 32 | F17-1 | Metric definitions | wrap, docs | DONE | Definitions in docs + edge-case unit tests | `wrap-service/tests/test_metrics_defs.py` | `0b4f1f6` |
-| 33 | F17-2 | Aggregation | wrap | DONE | Output matches hand-calculated fixture | `wrap-service/tests/test_aggregator.py` | pending |
-| 34 | F17-3 | Scheduled generation | wrap | TODO | Reruns never double-compute | `wrap-service/tests/test_scheduler.py` | |
+| 33 | F17-2 | Aggregation | wrap | DONE | Output matches hand-calculated fixture | `wrap-service/tests/test_aggregator.py` | `24ecdab` |
+| 34 | F17-3 | Scheduled generation | wrap | DONE | Reruns never double-compute | `wrap-service/tests/test_scheduler.py` | pending |
 | 35 | F17-4 | Wrap endpoints | wrap | TODO | Refresh limit returns 429 + Retry-After | `wrap-service/tests/test_wrap_endpoints.py` | |
 | 36 | F17-5 | Wrap caching | wrap | TODO | Repeated reads hit cache | `wrap-service/tests/test_wrap_cache.py` | |
 | 37 | F17-6 | Wrap UI | web | TODO | Renders correctly for little or no history | `web/tests/wrap_ui.test.tsx` | |
