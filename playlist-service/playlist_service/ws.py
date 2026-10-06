@@ -69,6 +69,7 @@ class CollabManager:
         self._pubsub_tasks: Dict[str, asyncio.Task] = {}
         self._is_draining = False
 
+        self.node_id = str(uuid.uuid4())
         # In-memory suggestions store: playlist_id -> Dict[suggestion_id, dict]
         self._suggestions: Dict[str, Dict[str, Any]] = {}
 
@@ -207,7 +208,9 @@ class CollabManager:
         if publish_to_redis and self.redis:
             try:
                 channel = self._pubsub_channel(playlist_id)
-                await self.redis.publish(channel, json.dumps(message))
+                payload = dict(message)
+                payload["_origin_node"] = self.node_id
+                await self.redis.publish(channel, json.dumps(payload))
             except Exception as e:
                 logger.warning(f"Error publishing to pubsub channel: {e}")
 
@@ -223,7 +226,10 @@ class CollabManager:
                 if raw and raw.get("type") == "message":
                     try:
                         data = json.loads(raw["data"])
-                        # Broadcast only locally (avoid echo loop)
+                        # Ignore frames originating from this node (already broadcast locally)
+                        if data.get("_origin_node") == self.node_id:
+                            continue
+                        data.pop("_origin_node", None)
                         conns = list(self._local_connections.get(playlist_id, set()))
                         for c in conns:
                             await c.send_json(data)

@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 22:50]
+## [2026-10-06 22:55]
+
+### [Category: Dev] — F11-5 Redis Pub/Sub Fan-out Across Multi-Node Clusters
+What changed:
+- Configured Redis Pub/Sub channel distribution per playlist (`vynl:collab:{playlist_id}`) in `playlist_service/ws.py`.
+- Added origin node tagging (`_origin_node`) on published frames to prevent local echo loops while forwarding events across all sibling cluster nodes.
+- Verified in `playlist-service/tests/test_ws_pubsub.py` with real Redis: client connected to Node A executes an edit, and client connected to Node B receives `op_applied` frame in real time.
+- Verified that terminating Node A and reconnecting to Node B provides immediate access to the converged, up-to-date playlist state.
+Why:
+- Requirement [F11-5]: horizontal scalability enabling seamless cross-instance collaborative sessions.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F11-4 Versioned Updates and Conflict Snapshots
 What changed:
