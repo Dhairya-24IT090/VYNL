@@ -4,7 +4,19 @@ All notable changes across all categories (Dev, SEO, UI, Audit) are documented h
 
 ---
 
-## [2026-10-06 23:30]
+## [2026-10-06 23:35]
+
+### [Category: Dev] — F17-5 Wrap Caching Layer and Dual TTL Policies
+What changed:
+- Implemented `WrapCache` in `wrap_service/caching.py` backed by Redis with write-through and read-through caching semantics.
+- Formulated differentiated TTL rules: past months / finalized wraps cache with a 30-day TTL (`2,592,000s`); current ongoing months cache with a 10-minute TTL (`600s`).
+- Built complete `wrap_service/main.py` application entrypoint with graceful shutdown and middleware integration.
+- Verified in `wrap-service/tests/test_wrap_cache.py` with real Redis: repeated reads hit cache directly without querying repository; TTL duration verified for past vs current months.
+Why:
+- Requirement [F17-5]: optimizes read performance, mitigating database load during high-traffic monthly wrap viewing spikes.
+Bug fixed: N/A.
+Root cause: N/A.
+
 
 ### [Category: Dev] — F17-4 Monthly Wrap Endpoints and 429 Retry-After Enforcement
 What changed:
