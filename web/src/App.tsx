@@ -6,16 +6,8 @@ import { BackdropProvider } from './context/BackdropContext'
 import { Navigation } from './components/Navigation'
 import { NowPlayingBar } from './components/NowPlayingBar'
 import { QueueDrawer } from './components/QueueDrawer'
-import { SignInPage, AuthGuard } from './components/AuthPage'
 
 import { DiscoverPage } from './pages/DiscoverPage'
-import { PlaylistsPage } from './pages/PlaylistsPage'
-import { WizardPage } from './pages/WizardPage'
-import { WrapPage } from './pages/WrapPage'
-import { LyricsPage } from './pages/LyricsPage'
-import { MetricsPage } from './pages/MetricsPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { PlaylistDetailPage } from './pages/PlaylistDetailPage'
 
 export const AppContent: React.FC = () => {
   const [isQueueOpen, setIsQueueOpen] = useState<boolean>(false)
@@ -41,42 +33,6 @@ export const AppContent: React.FC = () => {
       >
         <Routes>
           <Route path="/" element={<DiscoverPage />} />
-          <Route
-            path="/playlists"
-            element={
-              <AuthGuard>
-                <PlaylistsPage />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/playlists/:id"
-            element={
-              <AuthGuard>
-                <PlaylistDetailPage />
-              </AuthGuard>
-            }
-          />
-          <Route path="/wizard" element={<WizardPage />} />
-          <Route
-            path="/wrap"
-            element={
-              <AuthGuard>
-                <WrapPage />
-              </AuthGuard>
-            }
-          />
-          <Route path="/lyrics" element={<LyricsPage />} />
-          <Route path="/metrics" element={<MetricsPage />} />
-          <Route
-            path="/settings"
-            element={
-              <AuthGuard>
-                <SettingsPage />
-              </AuthGuard>
-            }
-          />
-          <Route path="/sign-in" element={<SignInPage />} />
           <Route path="*" element={<section><h1>Page not found</h1><Link to="/">Go to Discover</Link></section>} />
         </Routes>
       </main>

@@ -1,24 +1,18 @@
 /**
- * Search UI Component per Task 3 [F2-6].
- * Features debounced query execution (fast typing sends one request per pause),
- * structured error states with retry capabilities, and instant playback triggering.
+ * Search UI — calls the streaming API for real search + ingest + stream playback.
+ * Flow: search → display results → on Play: ingest → stream-link → playTrack()
  */
 import React, { useState, useEffect, useRef } from 'react'
-import { Search, RotateCcw, Play, Plus, Loader2 } from 'lucide-react'
-import type { Track } from '../types'
-import { SAMPLE_TRACKS } from '../data/mockData'
+import { Search, Play, Plus, Loader2, RotateCcw } from 'lucide-react'
+import type { SearchResult, Track } from '../types'
 import { usePlayer } from '../context/PlayerContext'
 
-interface SearchUIProps {
-  onSearchQuery?: (query: string) => Promise<Track[]>
-}
-
-export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
+export const SearchUI: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const [results, setResults] = useState<Track[]>([])
+  const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [requestCount, setRequestCount] = useState<number>(0)
+  const [loadingTrackId, setLoadingTrackId] = useState<number | null>(null)
 
   const { playTrack, addToQueue } = usePlayer()
   const timerRef = useRef<any>(null)
@@ -33,21 +27,16 @@ export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
 
     setIsLoading(true)
     setError(null)
-    setRequestCount((c) => c + 1)
 
     try {
-      if (onSearchQuery) {
-        const data = await onSearchQuery(query)
-        setResults(data)
-      } else {
-        // Default local filter
-        await new Promise((r) => setTimeout(r, 60))
-        const q = query.toLowerCase()
-        const matched = SAMPLE_TRACKS.filter(
-          (t) => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q)
-        )
-        setResults(matched)
+      const params = new URLSearchParams({ title: query })
+      const res = await fetch(`/api/v1/tracks/search?${params}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.detail || `Search failed (${res.status})`)
       }
+      const data: SearchResult[] = await res.json()
+      setResults(data)
     } catch (err: any) {
       setError(err?.message || 'Search service temporarily unavailable')
       setResults([])
@@ -56,16 +45,14 @@ export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
     }
   }
 
-  // Debounced input handler (Task 3 [F2-6]: fast typing = 1 request per pause)
+  // Debounce: 250ms pause before firing request
   useEffect(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-    }
+    if (timerRef.current) clearTimeout(timerRef.current)
 
     if (searchTerm.trim()) {
       timerRef.current = setTimeout(() => {
         executeSearch(searchTerm)
-      }, 250) // 250ms debounce pause
+      }, 250)
     } else {
       setResults([])
       setError(null)
@@ -80,6 +67,102 @@ export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
     executeSearch(searchTerm)
   }
 
+  /** Ingest track → get stream-link → play via PlayerContext */
+  const handlePlay = async (result: SearchResult) => {
+    setLoadingTrackId(result.apple_track_id)
+    try {
+      // 1. Ingest (will dedup if already stored)
+      const ingestRes = await fetch('/api/v1/tracks/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: result.title,
+          artist: result.artist,
+          apple_track_id: result.apple_track_id,
+          apple_music_url: result.apple_music_url,
+        }),
+      })
+      if (!ingestRes.ok) {
+        const body = await ingestRes.json().catch(() => null)
+        throw new Error(body?.detail || `Ingest failed (${ingestRes.status})`)
+      }
+      const ingestData = await ingestRes.json()
+
+      // 2. Get stream link
+      const linkRes = await fetch(`/api/v1/tracks/${ingestData.track_id}/stream-link`)
+      if (!linkRes.ok) {
+        const body = await linkRes.json().catch(() => null)
+        throw new Error(body?.detail || `Stream link failed (${linkRes.status})`)
+      }
+      const linkData = await linkRes.json()
+
+      // 3. Build Track and play
+      const track: Track = {
+        id: ingestData.track_id,
+        title: result.title,
+        artist: result.artist,
+        duration_seconds: Math.round(result.duration_ms / 1000),
+        audio_url: linkData.stream_url,
+        cover_url: result.artwork_url,
+      }
+      playTrack(track)
+    } catch (err: any) {
+      setError(err?.message || 'Failed to play track')
+    } finally {
+      setLoadingTrackId(null)
+    }
+  }
+
+  /** Queue shortcut — same ingest flow but addToQueue instead */
+  const handleQueue = async (result: SearchResult) => {
+    setLoadingTrackId(result.apple_track_id)
+    try {
+      const ingestRes = await fetch('/api/v1/tracks/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: result.title,
+          artist: result.artist,
+          apple_track_id: result.apple_track_id,
+          apple_music_url: result.apple_music_url,
+        }),
+      })
+      if (!ingestRes.ok) {
+        const body = await ingestRes.json().catch(() => null)
+        throw new Error(body?.detail || `Ingest failed (${ingestRes.status})`)
+      }
+      const ingestData = await ingestRes.json()
+
+      const linkRes = await fetch(`/api/v1/tracks/${ingestData.track_id}/stream-link`)
+      if (!linkRes.ok) {
+        const body = await linkRes.json().catch(() => null)
+        throw new Error(body?.detail || `Stream link failed (${linkRes.status})`)
+      }
+      const linkData = await linkRes.json()
+
+      const track: Track = {
+        id: ingestData.track_id,
+        title: result.title,
+        artist: result.artist,
+        duration_seconds: Math.round(result.duration_ms / 1000),
+        audio_url: linkData.stream_url,
+        cover_url: result.artwork_url,
+      }
+      addToQueue(track)
+    } catch (err: any) {
+      setError(err?.message || 'Failed to queue track')
+    } finally {
+      setLoadingTrackId(null)
+    }
+  }
+
+  const formatDuration = (ms: number): string => {
+    const totalSec = Math.round(ms / 1000)
+    const mins = Math.floor(totalSec / 60)
+    const secs = totalSec % 60
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`
+  }
+
   return (
     <div style={{ width: '100%', maxWidth: '720px', margin: '0 auto' }}>
       {/* Search Input Bar */}
@@ -89,7 +172,7 @@ export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search tracks, artists, genres..."
+          placeholder="Search tracks, artists..."
           className="input-glass"
           style={{
             paddingLeft: '44px',
@@ -127,11 +210,7 @@ export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
         )}
       </div>
 
-      <div data-testid="search-request-counter" style={{ display: 'none' }}>
-        {requestCount}
-      </div>
-
-      {/* Error State with Retry Button */}
+      {/* Error State */}
       {error && (
         <div
           data-testid="search-error-state"
@@ -148,13 +227,12 @@ export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
           }}
         >
           <div>
-            <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '14px' }}>Search Failed</div>
+            <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '14px' }}>Error</div>
             <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '13px', marginTop: '2px' }}>
               {error}
             </div>
           </div>
           <button
-            data-testid="search-retry-button"
             onClick={handleRetry}
             className="btn-primary"
             style={{ padding: '8px 16px', fontSize: '13px' }}
@@ -164,74 +242,86 @@ export const SearchUI: React.FC<SearchUIProps> = ({ onSearchQuery }) => {
         </div>
       )}
 
-      {/* Search Results Display */}
+      {/* Search Results */}
       {results.length > 0 && (
         <div
           data-testid="search-results-list"
           style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
         >
-          {results.map((track) => (
-            <div
-              key={track.id}
-              data-testid={`search-result-${track.id}`}
-              className="glass-card"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                borderRadius: 'var(--radius-md)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: 'var(--radius-sm)',
-                    overflow: 'hidden',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  }}
-                >
-                  {track.cover_url && (
-                    <img
-                      src={track.cover_url}
-                      alt={track.title}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  )}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '14px' }}>
-                    {track.title}
+          {results.map((result) => {
+            const isTrackLoading = loadingTrackId === result.apple_track_id
+            return (
+              <div
+                key={result.apple_track_id}
+                data-testid={`search-result-${result.apple_track_id}`}
+                className="glass-card"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  opacity: isTrackLoading ? 0.6 : 1,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: 'var(--radius-sm)',
+                      overflow: 'hidden',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {result.artwork_url && (
+                      <img
+                        src={result.artwork_url}
+                        alt={result.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    )}
                   </div>
-                  <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>
-                    {track.artist}
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '14px' }}>
+                      {result.title}
+                    </div>
+                    <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>
+                      {result.artist} • {formatDuration(result.duration_ms)}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  data-testid={`play-search-${track.id}`}
-                  onClick={() => playTrack(track)}
-                  className="btn-glass"
-                  style={{ padding: '6px 12px', fontSize: '12px' }}
-                  aria-label={`Play ${track.title}`}
-                >
-                  <Play size={14} fill="#FFFFFF" /> Play
-                </button>
-                <button
-                  onClick={() => addToQueue(track)}
-                  className="btn-glass"
-                  style={{ padding: '6px 10px', fontSize: '12px' }}
-                  aria-label={`Queue ${track.title}`}
-                >
-                  <Plus size={14} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    data-testid={`play-search-${result.apple_track_id}`}
+                    onClick={() => handlePlay(result)}
+                    disabled={isTrackLoading}
+                    className="btn-glass"
+                    style={{ padding: '6px 12px', fontSize: '12px' }}
+                    aria-label={`Play ${result.title}`}
+                  >
+                    {isTrackLoading ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Play size={14} fill="#FFFFFF" />
+                    )}{' '}
+                    Play
+                  </button>
+                  <button
+                    onClick={() => handleQueue(result)}
+                    disabled={isTrackLoading}
+                    className="btn-glass"
+                    style={{ padding: '6px 10px', fontSize: '12px' }}
+                    aria-label={`Queue ${result.title}`}
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

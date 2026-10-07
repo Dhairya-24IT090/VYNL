@@ -12,6 +12,15 @@ export interface Track {
   genre?: string
 }
 
+export interface SearchResult {
+  title: string
+  artist: string
+  apple_track_id: number
+  apple_music_url: string
+  duration_ms: number
+  artwork_url: string
+}
+
 export interface PlaylistItem {
   id: string
   playlist_id: string

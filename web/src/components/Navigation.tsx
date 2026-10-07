@@ -19,12 +19,6 @@ export const Navigation: React.FC = () => {
 
   const navItems = [
     { path: '/', label: 'Discover', icon: Compass },
-    { path: '/playlists', label: 'Playlists', icon: ListMusic },
-    { path: '/wizard', label: 'AI Wizard', icon: Sparkles },
-    { path: '/wrap', label: 'Monthly Wrap', icon: Award },
-    { path: '/lyrics', label: 'Lyrics', icon: Mic2 },
-    { path: '/metrics', label: 'Performance', icon: Activity },
-    { path: '/settings', label: 'Settings', icon: Settings },
   ]
 
   return (
