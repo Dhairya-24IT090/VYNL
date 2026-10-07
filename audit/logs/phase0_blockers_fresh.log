@@ -1,5 +1,0 @@
-﻿Command: docker --version
-Outcome: unavailable; PowerShell reports docker is not recognized as a command.
-Command: uv run --no-sync python --version
-Outcome: unable to initialize configured Python/cache, per audit/logs/environment_probe.log.
-No Docker compose stack or Python test execution was possible.

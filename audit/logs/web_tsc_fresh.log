@@ -1,3 +1,0 @@
-﻿Command: npm.cmd exec tsc -- --noEmit
-Working directory: web/
-Outcome: exit 0
