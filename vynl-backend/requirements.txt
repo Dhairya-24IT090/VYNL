@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+motor
+pydantic
+pydantic-settings
+python-jose[cryptography]
+httpx
+scikit-learn
+numpy
+passlib[bcrypt]
+python-multipart
