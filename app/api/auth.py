@@ -220,4 +220,37 @@ async def logout(response: Response):
     response.delete_cookie(key="csrf_token", path="/")
     return {"status": "logged_out"}
 
+@router.post("/refresh")
+async def refresh_session(request: Request, response: Response, db=Depends(get_db)):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        # Check Authorization header fallback
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            refresh_token = auth_header.split(" ")[1]
+
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Refresh token missing")
+
+    try:
+        payload = decode_token(refresh_token)
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Expired or invalid refresh token")
+
+    new_access = create_access_token({"sub": user_id})
+    new_refresh = create_refresh_token({"sub": user_id})
+    new_csrf = secrets.token_hex(16)
+
+    _set_auth_cookies(response, new_access, new_refresh, new_csrf)
+    return {
+        "access_token": new_access,
+        "token_type": "bearer",
+        "csrf_token": new_csrf,
+        "user_id": user_id,
+    }
+
+
 
