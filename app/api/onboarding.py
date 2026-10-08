@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import datetime, timezone
 from app.dependencies import get_current_user, get_db
 
-router = APIRouter(prefix="/api/v1/onboarding", tags=["onboarding"])
+router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
 class OnboardingRequest(BaseModel):
     genres: List[str] = Field(..., description="Selected favorite genres (min 1)")

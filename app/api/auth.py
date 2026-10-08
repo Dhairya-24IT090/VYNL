@@ -10,7 +10,7 @@ from app.dependencies import get_current_user
 from app.config import settings
 from app.models.user import UserResponse
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 class GoogleLoginRequest(BaseModel):
     code: str

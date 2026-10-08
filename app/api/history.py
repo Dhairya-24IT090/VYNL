@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from app.dependencies import get_current_user, get_db
 from app.services.history_service import HistoryService
 
-router = APIRouter(prefix="/api/v1/history", tags=["history"])
+router = APIRouter(prefix="/history", tags=["history"])
 
 class PlayEventRequest(BaseModel):
     track_id: str

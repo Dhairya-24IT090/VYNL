@@ -3,7 +3,7 @@ from app.dependencies import get_current_user, get_db
 from app.db.mongo import get_audio_db
 from app.services.recommendation_engine import RecommendationEngine
 
-router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
+router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
 @router.get("/for-you")
 async def get_for_you(

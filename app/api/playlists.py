@@ -4,7 +4,7 @@ from typing import Optional, List
 from app.dependencies import get_current_user, get_db
 from app.services.playlist_service import PlaylistService
 
-router = APIRouter(prefix="/api/v1/playlists", tags=["playlists"])
+router = APIRouter(prefix="/playlists", tags=["playlists"])
 
 class CreatePlaylistRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)

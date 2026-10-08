@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from app.dependencies import get_current_user, get_db
 from app.services.library_service import LibraryService
 
-router = APIRouter(prefix="/api/v1/library", tags=["library"])
+router = APIRouter(prefix="/library", tags=["library"])
 
 class TrackActionRequest(BaseModel):
     track_id: str

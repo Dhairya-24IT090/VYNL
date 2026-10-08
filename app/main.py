@@ -39,15 +39,30 @@ app.add_middleware(
 )
 
 
-from app.api import auth, recommendations, library, playlists, history, onboarding
+from app.api import auth, activity, recommendations, library, playlists, history, onboarding, tracks
 
-app.include_router(auth.router)
-app.include_router(recommendations.router)
-app.include_router(library.router)
-app.include_router(playlists.router)
-app.include_router(history.router)
-app.include_router(onboarding.router)
+api_routers = [
+    auth.router,
+    activity.router,
+    recommendations.router,
+    library.router,
+    playlists.router,
+    history.router,
+    onboarding.router,
+    tracks.router,
+]
+
+for router in api_routers:
+    # Mount on /v1 for frontend direct clients (AuthContext, eventBuffer)
+    app.include_router(router, prefix="/v1")
+    # Dual-mount on /api/v1 for reverse proxies and SearchUI
+    app.include_router(router, prefix="/api/v1")
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": "vynl-backend",
+        "version": "1.0.0",
+    }
+
