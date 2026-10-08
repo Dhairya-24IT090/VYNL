@@ -71,7 +71,20 @@ export class ApiClient {
       credentials: options.credentials || "include",
     };
 
-    const response = await fetch(url, config);
+    let response = await fetch(url, config);
+
+    // ponytail: single transparent refresh attempt before giving up on session
+    if (response.status === 401 && !skipAuth && !endpoint.startsWith("/v1/auth/")) {
+      try {
+        const refreshRes = await fetch(`${this.baseUrl}/v1/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+        if (refreshRes.ok) {
+          response = await fetch(url, config);
+        }
+      } catch {}
+    }
 
     if (response.ok) this.unauthorizedNotified = false;
     if (
