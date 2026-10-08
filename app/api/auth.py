@@ -185,9 +185,31 @@ async def google_callback_post(req: GoogleLoginRequest, response: Response, db=D
     }
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserResponse)
 async def get_me(user_id: str = Depends(get_current_user), db=Depends(get_db)):
-    user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user = None
+    if db is not None:
+        user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+        if user_id == "mock-dev-id":
+            user = {
+                "user_id": "mock-dev-id",
+                "email": "dev.user@vynl.app",
+                "username": "vynldev",
+                "display_name": "VYNL Developer",
+                "avatar_url": "https://api.dicebear.com/7.x/bottts/svg?seed=vynl",
+                "onboarding_complete": False,
+            }
+        else:
+            raise HTTPException(status_code=404, detail="User not found")
+
+    return UserResponse(
+        user_id=user["user_id"],
+        email=user.get("email"),
+        username=user.get("username"),
+        display_name=user.get("display_name") or user.get("username") or "Listener",
+        avatar_url=user.get("avatar_url") or "https://api.dicebear.com/7.x/bottts/svg?seed=vynl",
+        is_authenticated=True,
+        onboarding_complete=user.get("onboarding_complete", False),
+    )
+
