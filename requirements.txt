@@ -3,9 +3,8 @@ uvicorn
 motor
 pydantic
 pydantic-settings
-python-jose[cryptography]
+PyJWT
 httpx
-scikit-learn
-numpy
-passlib[bcrypt]
 python-multipart
+pytest
+
