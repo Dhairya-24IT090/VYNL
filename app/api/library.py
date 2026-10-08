@@ -1,24 +1,51 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from app.dependencies import get_current_user, get_db
+from app.services.library_service import LibraryService
 
 router = APIRouter(prefix="/api/v1/library", tags=["library"])
 
-@router.get("/liked")
-async def get_liked_songs(user_id: str = Depends(get_current_user), db=Depends(get_db)):
-    # Placeholder
-    liked = await db.liked_songs.find({"user_id": user_id}).to_list(length=100)
-    return {"liked_songs": liked}
+class TrackActionRequest(BaseModel):
+    track_id: str
 
-@router.post("/like/{track_id}")
-async def like_song(track_id: str, user_id: str = Depends(get_current_user), db=Depends(get_db)):
-    await db.liked_songs.update_one(
-        {"user_id": user_id, "track_id": track_id},
-        {"$set": {"user_id": user_id, "track_id": track_id}},
-        upsert=True
-    )
-    return {"status": "liked"}
+@router.get("/")
+async def get_library(
+    limit: int = Query(50, ge=1, le=100),
+    user_id: str = Depends(get_current_user),
+    db=Depends(get_db)
+):
+    service = LibraryService(db)
+    tracks = await service.get_library_tracks(user_id, limit=limit)
+    return {"tracks": tracks, "count": len(tracks)}
 
-@router.delete("/like/{track_id}")
-async def unlike_song(track_id: str, user_id: str = Depends(get_current_user), db=Depends(get_db)):
-    await db.liked_songs.delete_one({"user_id": user_id, "track_id": track_id})
-    return {"status": "unliked"}
+@router.post("/tracks")
+async def save_track_to_library(
+    req: TrackActionRequest,
+    user_id: str = Depends(get_current_user),
+    db=Depends(get_db)
+):
+    service = LibraryService(db)
+    result = await service.add_to_library(user_id, req.track_id)
+    return {"status": "saved", "track": result}
+
+@router.delete("/tracks/{track_id}")
+async def delete_track_from_library(
+    track_id: str,
+    user_id: str = Depends(get_current_user),
+    db=Depends(get_db)
+):
+    service = LibraryService(db)
+    removed = await service.remove_from_library(user_id, track_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Track not found in library")
+    return {"status": "removed", "track_id": track_id}
+
+@router.get("/check/{track_id}")
+async def check_library_status(
+    track_id: str,
+    user_id: str = Depends(get_current_user),
+    db=Depends(get_db)
+):
+    service = LibraryService(db)
+    saved = await service.is_in_library(user_id, track_id)
+    return {"saved": saved, "track_id": track_id}
