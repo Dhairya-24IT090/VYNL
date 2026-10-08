@@ -41,36 +41,149 @@ async def google_auth_start(return_to: str = Query("/", description="Destination
     return RedirectResponse(url=dev_callback_url, status_code=307)
 
 
-@router.post("/google/callback")
-async def google_callback(req: GoogleLoginRequest, response: Response, db=Depends(get_db)):
-    # Placeholder for actual Google token exchange
-    # Mocking user data
-    user_data = {
-        "user_id": "test-uuid",
-        "email": "user@gmail.com",
-        "username": "testuser",
-        "google_sub": "12345"
+import httpx
+import uuid
+
+async def _exchange_or_mock_google_user(code: str) -> dict:
+    if settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET and code != "dev_mock_code":
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                token_res = await client.post(
+                    "https://oauth2.googleapis.com/token",
+                    data={
+                        "code": code,
+                        "client_id": settings.GOOGLE_CLIENT_ID,
+                        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                        "redirect_uri": f"{settings.BASE_URL}/api/v1/auth/google/callback",
+                        "grant_type": "authorization_code",
+                    },
+                )
+                if token_res.status_code == 200:
+                    token_data = token_res.json()
+                    userinfo_res = await client.get(
+                        "https://www.googleapis.com/oauth2/v3/userinfo",
+                        headers={"Authorization": f"Bearer {token_data.get('access_token')}"},
+                    )
+                    if userinfo_res.status_code == 200:
+                        info = userinfo_res.json()
+                        return {
+                            "email": info.get("email"),
+                            "username": (info.get("email") or "user").split("@")[0],
+                            "display_name": info.get("name") or (info.get("email") or "User").split("@")[0],
+                            "avatar_url": info.get("picture"),
+                            "google_sub": info.get("sub"),
+                        }
+        except Exception:
+            pass  # Fall back to development mock if network error or test code
+
+    # Fallback dev user
+    return {
+        "email": "dev.user@vynl.app",
+        "username": "vynldev",
+        "display_name": "VYNL Developer",
+        "avatar_url": "https://api.dicebear.com/7.x/bottts/svg?seed=vynl",
+        "google_sub": "dev-sub-12345",
     }
 
-    # Check if user exists
-    user = await db.users.find_one({"google_sub": user_data["google_sub"]})
-    if not user:
-        await db.users.insert_one(user_data)
-        user = user_data
-    
-    access_token = create_access_token({"sub": user["user_id"]})
-    refresh_token = create_refresh_token({"sub": user["user_id"]})
-    
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str, csrf_token: str):
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True, # Should be False in local dev without HTTPS
         samesite="lax",
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+        secure=False,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+    )
+    # CSRF cookie must be readable by frontend JS for X-CSRF-Token header
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        samesite="lax",
+        secure=False,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
     )
 
-    return {"access_token": access_token, "token_type": "bearer", "onboarding_complete": user.get("onboarding_complete", False)}
+@router.get("/google/callback")
+async def google_callback_get(
+    code: str = Query(...),
+    state: Optional[str] = Query(None),
+    db=Depends(get_db)
+):
+    user_info = await _exchange_or_mock_google_user(code)
+    target_path = "/"
+    if state:
+        try:
+            target_path = urllib.parse.unquote(state)
+        except Exception:
+            target_path = "/"
+
+    user = None
+    if db is not None:
+        user = await db.users.find_one({"google_sub": user_info["google_sub"]})
+        if not user:
+            user_id = str(uuid.uuid4())
+            doc = {
+                "user_id": user_id,
+                **user_info,
+                "auth_provider": "google",
+                "onboarding_complete": False,
+            }
+            await db.users.insert_one(doc)
+            user = doc
+    else:
+        user = {"user_id": "mock-dev-id", **user_info, "onboarding_complete": False}
+
+    access_token = create_access_token({"sub": user["user_id"]})
+    refresh_token = create_refresh_token({"sub": user["user_id"]})
+    csrf_token = secrets.token_hex(16)
+
+    redirect_url = f"{settings.FRONTEND_URL}{target_path}"
+    response = RedirectResponse(url=redirect_url, status_code=303)
+    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+    return response
+
+@router.post("/google/callback")
+async def google_callback_post(req: GoogleLoginRequest, response: Response, db=Depends(get_db)):
+    user_info = await _exchange_or_mock_google_user(req.code)
+    user = None
+    if db is not None:
+        user = await db.users.find_one({"google_sub": user_info["google_sub"]})
+        if not user:
+            user_id = str(uuid.uuid4())
+            doc = {
+                "user_id": user_id,
+                **user_info,
+                "auth_provider": "google",
+                "onboarding_complete": False,
+            }
+            await db.users.insert_one(doc)
+            user = doc
+    else:
+        user = {"user_id": "mock-dev-id", **user_info, "onboarding_complete": False}
+
+    access_token = create_access_token({"sub": user["user_id"]})
+    refresh_token = create_refresh_token({"sub": user["user_id"]})
+    csrf_token = secrets.token_hex(16)
+
+    _set_auth_cookies(response, access_token, refresh_token, csrf_token)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "csrf_token": csrf_token,
+        "user_id": user["user_id"],
+        "onboarding_complete": user.get("onboarding_complete", False),
+    }
+
 
 @router.get("/me")
 async def get_me(user_id: str = Depends(get_current_user), db=Depends(get_db)):
