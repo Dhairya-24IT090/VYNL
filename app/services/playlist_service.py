@@ -3,9 +3,12 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from app.utils.serializers import serialize_mongo_doc
 
+from app.db.mongo import get_audio_db
+
 class PlaylistService:
     def __init__(self, db):
         self.db = db
+        self.audio_db = get_audio_db()
 
     async def get_playlists(self, user_id: str) -> List[Dict[str, Any]]:
         if self.db is None:
@@ -21,7 +24,22 @@ class PlaylistService:
             "user_id": user_id,
             "playlist_id": playlist_id,
         })
-        return serialize_mongo_doc(doc) if doc else None
+        if not doc:
+            return None
+        tracks = doc.get("tracks", [])
+        if self.audio_db is not None and tracks:
+            track_ids = [t["track_id"] for t in tracks if "track_id" in t]
+            track_docs = await self.audio_db.tracks.find({"track_id": {"$in": track_ids}}).to_list(length=len(track_ids))
+            track_map = {t["track_id"]: t for t in track_docs}
+            for t in tracks:
+                meta = track_map.get(t.get("track_id"))
+                if meta:
+                    t["title"] = meta.get("title") or "Unknown Title"
+                    t["artist"] = meta.get("artist") or "Unknown Artist"
+                    t["album"] = meta.get("album") or ""
+                    t["cover_url"] = meta.get("cover_url") or meta.get("artwork_url") or ""
+                    t["duration_seconds"] = meta.get("duration_seconds") or 0
+        return serialize_mongo_doc(doc)
 
     async def create_playlist(self, user_id: str, name: str, description: str = "") -> Dict[str, Any]:
         playlist_id = str(uuid.uuid4())
