@@ -7,7 +7,13 @@ import { Navigation } from "./components/Navigation";
 import { NowPlayingBar } from "./components/NowPlayingBar";
 import { QueueDrawer } from "./components/QueueDrawer";
 
+import { HomePage } from "./pages/HomePage";
 import { DiscoverPage } from "./pages/DiscoverPage";
+import { LibraryPage } from "./pages/LibraryPage";
+import { PlaylistsPage } from "./pages/PlaylistsPage";
+import { PlaylistDetailPage } from "./pages/PlaylistDetailPage";
+import { LoginPage } from "./pages/LoginPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 
 export const AppContent = () => {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
@@ -32,13 +38,19 @@ export const AppContent = () => {
         }}
       >
         <Routes>
-          <Route path="/" element={<DiscoverPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/playlists" element={<PlaylistsPage />} />
+          <Route path="/playlists/:id" element={<PlaylistDetailPage />} />
+          <Route path="/sign-in" element={<LoginPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route
             path="*"
             element={
-              <section>
-                <h1>Page not found</h1>
-                <Link to="/">Go to Discover</Link>
+              <section style={{ padding: "40px" }}>
+                <h1 style={{ color: "#FFFFFF", marginBottom: "12px" }}>Page not found</h1>
+                <Link to="/" className="btn-glass" style={{ textDecoration: "none" }}>Go to Home</Link>
               </section>
             }
           />
