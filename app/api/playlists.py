@@ -1,33 +1,68 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+from typing import Optional, List
 from app.dependencies import get_current_user, get_db
-import uuid
+from app.services.playlist_service import PlaylistService
 
 router = APIRouter(prefix="/api/v1/playlists", tags=["playlists"])
 
+class CreatePlaylistRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = ""
+
+class AddTrackRequest(BaseModel):
+    track_id: str
+
 @router.get("/")
-async def get_playlists(user_id: str = Depends(get_current_user), db=Depends(get_db)):
-    playlists = await db.playlists.find({"user_id": user_id}).to_list(length=50)
+async def get_user_playlists(user_id: str = Depends(get_current_user), db=Depends(get_db)):
+    service = PlaylistService(db)
+    playlists = await service.get_playlists(user_id)
     return {"playlists": playlists}
 
 @router.post("/")
-async def create_playlist(name: str, user_id: str = Depends(get_current_user), db=Depends(get_db)):
-    playlist_id = str(uuid.uuid4())
-    doc = {
-        "playlist_id": playlist_id,
-        "user_id": user_id,
-        "name": name,
-        "tracks": []
-    }
-    await db.playlists.insert_one(doc)
-    del doc["_id"]
-    return doc
+async def create_new_playlist(req: CreatePlaylistRequest, user_id: str = Depends(get_current_user), db=Depends(get_db)):
+    service = PlaylistService(db)
+    created = await service.create_playlist(user_id, req.name, req.description or "")
+    return created
+
+@router.get("/{playlist_id}")
+async def get_playlist_details(playlist_id: str, user_id: str = Depends(get_current_user), db=Depends(get_db)):
+    service = PlaylistService(db)
+    playlist = await service.get_playlist(user_id, playlist_id)
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return playlist
+
+@router.delete("/{playlist_id}")
+async def delete_playlist_by_id(playlist_id: str, user_id: str = Depends(get_current_user), db=Depends(get_db)):
+    service = PlaylistService(db)
+    deleted = await service.delete_playlist(user_id, playlist_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return {"status": "deleted"}
 
 @router.post("/{playlist_id}/tracks")
-async def add_track(playlist_id: str, track_id: str, user_id: str = Depends(get_current_user), db=Depends(get_db)):
-    res = await db.playlists.update_one(
-        {"playlist_id": playlist_id, "user_id": user_id},
-        {"$push": {"tracks": {"track_id": track_id, "position": 0}}}
-    )
-    if res.modified_count == 0:
+async def add_track_to_playlist(
+    playlist_id: str,
+    req: AddTrackRequest,
+    user_id: str = Depends(get_current_user),
+    db=Depends(get_db)
+):
+    service = PlaylistService(db)
+    added = await service.add_track(user_id, playlist_id, req.track_id)
+    if not added:
         raise HTTPException(status_code=404, detail="Playlist not found")
-    return {"status": "added"}
+    return {"status": "added", "track_id": req.track_id}
+
+@router.delete("/{playlist_id}/tracks/{track_id}")
+async def remove_track_from_playlist(
+    playlist_id: str,
+    track_id: str,
+    user_id: str = Depends(get_current_user),
+    db=Depends(get_db)
+):
+    service = PlaylistService(db)
+    removed = await service.remove_track(user_id, playlist_id, track_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Track or playlist not found")
+    return {"status": "removed", "track_id": track_id}
