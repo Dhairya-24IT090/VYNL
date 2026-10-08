@@ -1,14 +1,45 @@
-from fastapi import APIRouter, Depends, Response, HTTPException
+import urllib.parse
+from fastapi import APIRouter, Depends, Response, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
+from typing import Optional
+import secrets
 from app.db.mongo import get_db
-from app.utils.jwt_utils import create_access_token, create_refresh_token
+from app.utils.jwt_utils import create_access_token, create_refresh_token, decode_token
 from app.dependencies import get_current_user
 from app.config import settings
+from app.models.user import UserResponse
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 class GoogleLoginRequest(BaseModel):
     code: str
+    return_to: Optional[str] = "/"
+
+@router.get("/google/start")
+async def google_auth_start(return_to: str = Query("/", description="Destination route after authentication")):
+    # Sanitize return_to target
+    safe_return = return_to if return_to.startswith("/") and not return_to.startswith("//") else "/"
+    state = urllib.parse.quote(safe_return)
+
+    if settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET:
+        redirect_uri = f"{settings.BASE_URL}/api/v1/auth/google/callback"
+        params = {
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "access_type": "offline",
+            "prompt": "consent",
+            "state": state,
+        }
+        auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+        return RedirectResponse(url=auth_url, status_code=307)
+
+    # Local development fallback when Google credentials not supplied
+    dev_callback_url = f"/api/v1/auth/google/callback?code=dev_mock_code&state={state}"
+    return RedirectResponse(url=dev_callback_url, status_code=307)
+
 
 @router.post("/google/callback")
 async def google_callback(req: GoogleLoginRequest, response: Response, db=Depends(get_db)):
