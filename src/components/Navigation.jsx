@@ -1,13 +1,18 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Compass, LogOut, LogIn } from "lucide-react";
+import { Home, Compass, Heart, ListMusic, LogOut, LogIn } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export const Navigation = () => {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
 
-  const navItems = [{ path: "/", label: "Discover", icon: Compass }];
+  const navItems = [
+    { path: "/", label: "Home", icon: Home },
+    { path: "/discover", label: "Discover", icon: Compass },
+    { path: "/library", label: "Library", icon: Heart },
+    { path: "/playlists", label: "Playlists", icon: ListMusic },
+  ];
 
   return (
     <aside
