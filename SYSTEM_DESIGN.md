@@ -459,5 +459,24 @@ vynl-backend/
 │   └── utils/
 │       ├── __init__.py
 │       ├── jwt_utils.py
+│       ├── serializers.py       # ObjectId serialization
 │       └── similarity.py        # Cosine similarity helpers
 ```
+
+---
+
+## 11. Frontend Integration Contracts & Alignment
+
+The backend router is dual-mounted under `/v1` and `/api/v1` to accommodate frontend clients (`apiClient.js`, `eventBuffer.js`, `SearchUI.jsx`):
+
+| Method | Endpoint | Frontend Consumer | Payload / Response Contract |
+|---|---|---|---|
+| `GET` | `/v1/auth/me` | `AuthContext.jsx` | Returns `{ user_id, display_name, avatar_url, is_authenticated, onboarding_complete }` |
+| `GET` | `/v1/auth/google/start` | `AuthContext.jsx` | Query param `return_to`, initiates OAuth or dev mock redirect |
+| `POST` | `/v1/auth/logout` | `AuthContext.jsx` | Clears `access_token`, `refresh_token`, and `csrf_token` cookies |
+| `POST` | `/v1/auth/refresh` | `apiClient.js` | Silent JWT renewal via HTTP-only cookie or bearer token |
+| `POST` | `/v1/activity/batch` | `eventBuffer.js` | Ingests buffered event telemetry (flushed every 5s / beforeunload) |
+| `GET` | `/v1/recommendations/for-you` | Player / Discover | Personalized tracks with genre, artist affinity, acoustic score |
+| `GET` | `/v1/recommendations/radio/{id}` | Queue / Radio | Instant track radio seeded by acoustic feature vector |
+| `GET` | `/v1/tracks/search` | `SearchUI.jsx` | Catalog lookup or proxy to audio streaming microservice |
+
