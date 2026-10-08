@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }) => {
         username: session.display_name,
         avatar_url: session.avatar_url,
         is_authenticated: true,
+        onboarding_complete: Boolean(session.onboarding_complete),
       });
       return true;
     } catch {
