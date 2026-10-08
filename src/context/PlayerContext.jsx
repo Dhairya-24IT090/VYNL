@@ -11,6 +11,7 @@ import React, {
   useState,
 } from "react";
 import { eventBuffer } from "../services/eventBuffer";
+import { api } from "../services/apiClient";
 
 const PlayerContext = createContext(null);
 
@@ -40,6 +41,15 @@ export const PlayerProvider = ({ children }) => {
       };
 
       audio.onended = () => {
+        if (currentTrack) {
+          api.post("/v1/history/play", {
+            track_id: currentTrack.id,
+            duration_listened_ms: Math.round((audio.currentTime || 0) * 1000),
+            total_duration_ms: Math.round((audio.duration || 1) * 1000),
+            source: "web_player",
+            action: "full_play",
+          }).catch(() => {});
+        }
         nextTrack();
       };
 
@@ -165,12 +175,14 @@ export const PlayerProvider = ({ children }) => {
   };
 
   const toggleLike = (trackId) => {
+    const nextLiked = currentTrack && currentTrack.id === trackId ? !currentTrack.is_liked : true;
+
     if (currentTrack && currentTrack.id === trackId) {
       const updated = {
         ...currentTrack,
-        is_liked: !currentTrack.is_liked,
+        is_liked: nextLiked,
         likes_count:
-          (currentTrack.likes_count || 0) + (currentTrack.is_liked ? -1 : 1),
+          (currentTrack.likes_count || 0) + (nextLiked ? 1 : -1),
       };
       setCurrentTrack(updated);
     }
@@ -186,6 +198,12 @@ export const PlayerProvider = ({ children }) => {
           : t,
       ),
     );
+
+    if (nextLiked) {
+      api.post("/v1/library/tracks", { track_id: trackId }).catch(() => {});
+    } else {
+      api.delete(`/v1/library/tracks/${trackId}`).catch(() => {});
+    }
 
     eventBuffer.push({
       event_type: "like",
