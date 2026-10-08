@@ -15,6 +15,18 @@ class LibraryService:
             return []
         cursor = self.db.library.find({"user_id": user_id}).sort("added_at", -1).limit(limit)
         docs = await cursor.to_list(length=limit)
+        if self.audio_db is not None and docs:
+            track_ids = [d["track_id"] for d in docs]
+            track_docs = await self.audio_db.tracks.find({"track_id": {"$in": track_ids}}).to_list(length=len(track_ids))
+            track_map = {t["track_id"]: t for t in track_docs}
+            for d in docs:
+                t = track_map.get(d["track_id"])
+                if t:
+                    d["title"] = t.get("title") or "Unknown Title"
+                    d["artist"] = t.get("artist") or "Unknown Artist"
+                    d["album"] = t.get("album") or ""
+                    d["cover_url"] = t.get("cover_url") or t.get("artwork_url") or ""
+                    d["duration_seconds"] = t.get("duration_seconds") or 0
         return serialize_mongo_doc(docs)
 
     async def add_to_library(self, user_id: str, track_id: str) -> Dict[str, Any]:
