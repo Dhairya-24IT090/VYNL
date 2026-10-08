@@ -213,3 +213,11 @@ async def get_me(user_id: str = Depends(get_current_user), db=Depends(get_db)):
         onboarding_complete=user.get("onboarding_complete", False),
     )
 
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/")
+    response.delete_cookie(key="csrf_token", path="/")
+    return {"status": "logged_out"}
+
+
