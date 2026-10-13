@@ -10,9 +10,14 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
   const [creating, setCreating] = useState(false);
   const [addingToId, setAddingToId] = useState(null);
   const [error, setError] = useState(null);
+  const [isSwooshing, setIsSwooshing] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setIsSwooshing(false);
+      return;
+    }
+    setIsSwooshing(false);
     setLoading(true);
     setError(null);
     api
@@ -75,6 +80,11 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
           (track.duration_ms ? Math.round(track.duration_ms / 1000) : 0),
       });
       setAddedIds((prev) => new Set([...prev, playlistId]));
+      setIsSwooshing(true);
+      setTimeout(() => {
+        onClose();
+        setIsSwooshing(false);
+      }, 600);
     } catch (err) {
       setError(err?.message || "Failed to add track to playlist.");
     } finally {
@@ -116,17 +126,29 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
         justifyContent: "center",
         zIndex: 100,
         padding: "20px",
+        opacity: isSwooshing ? 0 : 1,
+        transition: "opacity 500ms ease",
       }}
       onClick={onClose}
     >
       <div
         className="glass-panel"
+        data-testid="add-to-playlist-dialog"
         style={{
           width: "100%",
           maxWidth: "420px",
           padding: "24px",
           backgroundColor: "rgba(22, 22, 26, 0.95)",
-          boxShadow: "var(--shadow-floating)",
+          boxShadow: isSwooshing
+            ? "0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 255, 255, 0.15)"
+            : "var(--shadow-floating)",
+          transform: isSwooshing
+            ? "translateY(-32px) scale(0.92)"
+            : "translateY(0) scale(1)",
+          opacity: isSwooshing ? 0 : 1,
+          filter: isSwooshing ? "blur(4px)" : "none",
+          transition:
+            "transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 500ms ease, filter 500ms ease",
         }}
         onClick={(e) => e.stopPropagation()}
       >

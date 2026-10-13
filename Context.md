@@ -83,6 +83,9 @@ VYNL/
 
 ### Playlists
 - **Multiple Custom Playlists**: Unlimited playlists can be created via `PlaylistsPage.jsx` or inline within `AddToPlaylistModal.jsx`.
+- **Swoosh Modal & Auto-Close**: `AddToPlaylistModal.jsx` provides an animated swoosh exit transition and automatically closes upon track addition.
+- **Add Songs Action**: `PlaylistDetailPage.jsx` includes an "Add Songs" button in the header toggling an expandable search drawer with live debounced search and single-click additions.
+- **5-Song Sliding Recommendation Window**: Located at the bottom of each playlist view, featuring a Refresh button, single `+` buttons for 1-click addition, and automatic refill from candidate pool upon song addition.
 - **Defensive API Ingestion**: Safely unwraps `{ playlists: [...] }` from `/v1/playlists/` avoiding state wipeouts.
 - **Card Quick Actions**: Play and Shuffle buttons directly on each playlist card in the gallery grid.
 - **Detail View & True Shuffle**:

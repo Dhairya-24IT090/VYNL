@@ -4,6 +4,43 @@ All notable changes to the VYNL web client are documented in this file in revers
 
 ---
 
+## [2026-10-14 00:58]
+
+### [Category: Dev] — Playlist Enhancements: Swoosh Auto-Close, Add Songs Action & 5-Song Sliding Recommendations
+What changed:
+- Updated `AddToPlaylistModal.jsx` with an animated swoosh exit transition and automatic closure (~600ms) upon adding a song to a playlist.
+- Added an "Add Songs" button in `PlaylistDetailPage.jsx` header opening an expandable search drawer with debounced iTunes/catalog searching and quick `+` additions.
+- Added a 5-song sliding recommendation window at the bottom of `PlaylistDetailPage.jsx` featuring:
+  - Refresh button to cycle recommendation tracks.
+  - Single `+` button on each song to immediately add it to the playlist.
+  - Auto-refill mechanism that immediately pulls the next candidate song into the 5th spot when a song is added, keeping exactly 5 songs in the window.
+- Added automated Vitest tests in `tests/playlist_enhancements.test.tsx` (all passing).
+
+Why:
+- Delivers animated visual feedback and rapid playlist curation directly from playlist views.
+
+### [Category: UI] — Animated Modal Exit & Recommendation Shelf UX
+What changed:
+- Added swoosh blur, scale, and translate animation to `AddToPlaylistModal.jsx`.
+- Built sleek 5-song recommendation shelf at the bottom of `PlaylistDetailPage.jsx` with instant replacement transitions.
+
+Why:
+- Fulfills user specifications for seamless playlist building and dynamic recommendation exploration.
+
+---
+
+## [2026-10-14 00:36]
+
+### [Category: Dev] — Verified End-to-End Lyrics Stream & Playback Sync
+What changed:
+- Verified lyrics retrieval against live audio tracks with composite titles (e.g., "Die For You - The Weeknd -").
+- Confirmed synchronized line progression, auto-scroll centering, and glow rendering as playback advances.
+
+Why:
+- Ensure seamless end-to-end user experience for all tracks across both authenticated and guest playback sessions.
+
+---
+
 ## [2026-10-14 00:25]
 
 ### [Category: Dev] — Synced & Customizable Lyrics Client Implementation
