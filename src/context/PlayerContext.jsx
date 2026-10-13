@@ -265,6 +265,7 @@ export const PlayerProvider = ({ children }) => {
         currentTrack,
         isPlaying,
         progress,
+        currentTime: progress,
         duration,
         volume,
         queue,
@@ -280,6 +281,7 @@ export const PlayerProvider = ({ children }) => {
         reorderQueue,
         toggleLike,
         refreshTrackUrl,
+        getAudioCurrentTime: () => (audioRef.current ? audioRef.current.currentTime : progress),
       }}
     >
       {children}

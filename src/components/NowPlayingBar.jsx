@@ -18,7 +18,12 @@ import {
 } from "lucide-react";
 import { usePlayer } from "../context/PlayerContext";
 
-export const NowPlayingBar = ({ onToggleQueue, isQueueOpen }) => {
+export const NowPlayingBar = ({
+  onToggleQueue,
+  isQueueOpen,
+  onToggleLyrics,
+  isLyricsOpen,
+}) => {
   const {
     currentTrack,
     isPlaying,
@@ -307,20 +312,25 @@ export const NowPlayingBar = ({ onToggleQueue, isQueueOpen }) => {
           justifyContent: "flex-end",
         }}
       >
-        <Link
-          to="/lyrics"
-          title="Open Synchronized Lyrics"
-          aria-label="Lyrics"
+        <button
+          onClick={onToggleLyrics}
+          title="Toggle Lyrics Panel"
+          aria-label="Toggle Lyrics Panel"
+          data-testid="lyrics-toggle-btn"
           style={{
-            color: "var(--color-text-secondary)",
-            textDecoration: "none",
+            background: isLyricsOpen ? "rgba(255, 255, 255, 0.15)" : "transparent",
+            border: "none",
+            borderRadius: "6px",
+            color: isLyricsOpen ? "#FFFFFF" : "var(--color-text-secondary)",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             padding: "6px",
+            transition: "all 150ms ease",
           }}
         >
           <Mic2 size={18} />
-        </Link>
+        </button>
 
         {onToggleQueue && (
           <button

@@ -6,6 +6,7 @@ import { BackdropProvider } from "./context/BackdropContext";
 import { Navigation } from "./components/Navigation";
 import { NowPlayingBar } from "./components/NowPlayingBar";
 import { QueueDrawer } from "./components/QueueDrawer";
+import { LyricsPanel } from "./components/LyricsPanel";
 
 import { HomePage } from "./pages/HomePage";
 import { DiscoverPage } from "./pages/DiscoverPage";
@@ -17,6 +18,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 
 export const AppContent = () => {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
 
   return (
     <div
@@ -60,9 +62,12 @@ export const AppContent = () => {
       <NowPlayingBar
         onToggleQueue={() => setIsQueueOpen((prev) => !prev)}
         isQueueOpen={isQueueOpen}
+        onToggleLyrics={() => setIsLyricsOpen((prev) => !prev)}
+        isLyricsOpen={isLyricsOpen}
       />
 
       <QueueDrawer isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
+      <LyricsPanel isOpen={isLyricsOpen} onClose={() => setIsLyricsOpen(false)} />
     </div>
   );
 };

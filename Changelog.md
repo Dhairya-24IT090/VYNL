@@ -4,6 +4,38 @@ All notable changes to the VYNL web client are documented in this file in revers
 
 ---
 
+## [2026-10-14 00:25]
+
+### [Category: Dev] — Synced & Customizable Lyrics Client Implementation
+What changed:
+- Created autodiscovered background images config `src/config/lyricsBackgrounds.js` scanning `src/assets/lyrics-backgrounds/` via Vite's `import.meta.glob`.
+- Created Google Fonts config `src/config/lyricsFonts.js` featuring 30 fonts across 6 categories with on-demand stylesheet injection.
+- Implemented LRC parser, plain lyrics character-weighted estimation, and binary search active-line finder in `src/utils/lrc.js`.
+- Implemented pure Latin-script English language validation in `src/utils/lyricsLanguage.js`.
+- Implemented `useLyrics` (caching, abort controller) and `useLyricsStyle` (`vynl.lyricsStyle.v1` in `localStorage` with validation and clamping).
+- Added `currentTime` and `getAudioCurrentTime` non-blocking getter to `PlayerContext.jsx`.
+- Created `LyricsPanel.jsx` sliding glassmorphic drawer and fullscreen viewer with auto-scroll, 3s manual scroll pause, jump to line button, active line glow, and click-to-seek.
+- Created `LyricsCustomizer.jsx` with Background, 30 Font live previews, and Effects tabs.
+- Added `LyricsScreen.jsx` compatibility adapter and re-export for testing harnesses.
+- Added interactive lyrics toggle button (`data-testid="lyrics-toggle-btn"`) to `NowPlayingBar.jsx` and mounted `LyricsPanel` in `App.jsx`.
+- Added unit tests in `tests/lyrics_engine.test.ts` (19 passing tests).
+- Verified production build succeeds in <300ms.
+
+Why:
+- Adds interactive, real-time synchronized and customizable lyrics viewing directly in the VYNL web player.
+
+### [Category: UI] — Lyrics Drawer, Fullscreen Mode & Live Customizer
+What changed:
+- Implemented sliding glassmorphic lyrics panel responsive down to mobile viewports (375px).
+- Added fullscreen expansion overlay with `Esc` key handling.
+- Added layered dynamic text-shadow glow effect and dark overlay control.
+- Verified in-browser end-to-end functionality including panel toggle, customizer interaction, fullscreen mode, playback tracking, and localStorage persistence.
+
+Why:
+- Delivers a visually rich, responsive user experience adhering to the VYNL glassmorphism aesthetic.
+
+---
+
 ## [2026-10-14 00:05]
 
 ### [Category: Dev] — Context & Documentation Harmonization
