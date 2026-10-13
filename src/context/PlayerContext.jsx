@@ -85,26 +85,74 @@ export const PlayerProvider = ({ children }) => {
     return refreshedUrl;
   };
 
-  const playTrack = (track, newQueue) => {
-    setCurrentTrack(track);
-    if (newQueue) {
-      setQueue(newQueue);
-    } else if (!queue.some((t) => t.id === track.id)) {
-      setQueue((prev) => [...prev, track]);
+  const ensureTrackAudioUrl = async (track) => {
+    if (track.audio_url) return track.audio_url;
+    const trackId = track.id || track.track_id;
+    if (!trackId) return "";
+    try {
+      const res = await api.get(`/api/v1/tracks/${trackId}/stream-link`);
+      return res.stream_url || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const playTrack = async (track, newQueue) => {
+    let resolvedTrack = {
+      ...track,
+      id: track.id || track.track_id,
+      track_id: track.track_id || track.id,
+    };
+
+    if (!resolvedTrack.audio_url) {
+      const freshUrl = await ensureTrackAudioUrl(resolvedTrack);
+      if (freshUrl) {
+        resolvedTrack.audio_url = freshUrl;
+      }
     }
 
-    if (audioRef.current) {
-      audioRef.current.src = track.audio_url;
+    setCurrentTrack(resolvedTrack);
+    if (newQueue) {
+      setQueue(newQueue);
+    } else if (!queue.some((t) => (t.id || t.track_id) === resolvedTrack.id)) {
+      setQueue((prev) => [...prev, resolvedTrack]);
+    }
+
+    if (audioRef.current && resolvedTrack.audio_url) {
+      audioRef.current.src = resolvedTrack.audio_url;
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
       setIsPlaying(true);
     }
 
-    eventBuffer.push({
-      event_type: "play",
-      track_id: track.id,
-      context: "player",
-    });
+    if (resolvedTrack.id) {
+      eventBuffer.push({
+        event_type: "play",
+        track_id: resolvedTrack.id,
+        context: "player",
+      });
+    }
+  };
+
+  const playPlaylist = async (tracks, { shuffle = false, startIndex = 0 } = {}) => {
+    if (!tracks || tracks.length === 0) return;
+    const normalized = tracks.map((t) => ({
+      ...t,
+      id: t.track_id || t.id,
+      track_id: t.track_id || t.id,
+    }));
+
+    let targetQueue = [...normalized];
+    if (shuffle) {
+      for (let i = targetQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [targetQueue[i], targetQueue[j]] = [targetQueue[j], targetQueue[i]];
+      }
+    }
+
+    const firstIndex = shuffle ? 0 : Math.max(0, Math.min(startIndex, targetQueue.length - 1));
+    const firstTrack = targetQueue[firstIndex];
+    await playTrack(firstTrack, targetQueue);
   };
 
   const togglePlay = () => {
@@ -221,6 +269,7 @@ export const PlayerProvider = ({ children }) => {
         volume,
         queue,
         playTrack,
+        playPlaylist,
         togglePlay,
         seek,
         setVolume,

@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../services/apiClient";
 import { usePlayer } from "../context/PlayerContext";
-import { Play, Trash2, ArrowLeft } from "lucide-react";
+import { Play, Trash2, ArrowLeft, Shuffle } from "lucide-react";
 
 export const PlaylistDetailPage = () => {
   const { id } = useParams();
-  const { playTrack } = usePlayer();
+  const { playTrack, playPlaylist } = usePlayer();
   const [playlist, setPlaylist] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,10 +30,14 @@ export const PlaylistDetailPage = () => {
     };
   }, [id]);
 
-  const handlePlayTrack = async (track) => {
+  const handlePlayTrack = async (track, idx = 0) => {
+    if (playlist?.tracks && playlist.tracks.length > 0) {
+      await playPlaylist(playlist.tracks, { shuffle: false, startIndex: idx });
+      return;
+    }
     let audioUrl = track.audio_url;
     const trackId = track.track_id || track.id;
-    if (!audioUrl) {
+    if (!audioUrl && trackId) {
       try {
         const res = await api.get(`/api/v1/tracks/${trackId}/stream-link`);
         audioUrl = res.stream_url;
@@ -49,6 +53,18 @@ export const PlaylistDetailPage = () => {
       audio_url: audioUrl,
     };
     playTrack(playable);
+  };
+
+  const handlePlayAll = async () => {
+    if (playlist?.tracks && playlist.tracks.length > 0) {
+      await playPlaylist(playlist.tracks, { shuffle: false });
+    }
+  };
+
+  const handleShuffle = async () => {
+    if (playlist?.tracks && playlist.tracks.length > 0) {
+      await playPlaylist(playlist.tracks, { shuffle: true });
+    }
   };
 
   const handleRemoveTrack = async (trackId) => {
@@ -106,13 +122,31 @@ export const PlaylistDetailPage = () => {
         </div>
 
         {tracks.length > 0 && (
-          <button
-            onClick={() => handlePlayTrack(tracks[0])}
-            className="btn-glass"
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px" }}
-          >
-            <Play size={16} fill="currentColor" /> Play All
-          </button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <button
+              onClick={handlePlayAll}
+              className="btn-glass"
+              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 18px" }}
+              title="Play All"
+            >
+              <Play size={16} fill="currentColor" /> Play All
+            </button>
+            <button
+              onClick={handleShuffle}
+              className="btn-glass"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 18px",
+                backgroundColor: "rgba(255, 255, 255, 0.08)",
+                color: "var(--color-accent)",
+              }}
+              title="Shuffle Playlist"
+            >
+              <Shuffle size={16} /> Shuffle
+            </button>
+          </div>
         )}
       </header>
 
@@ -142,7 +176,7 @@ export const PlaylistDetailPage = () => {
                       {idx + 1}
                     </span>
                     <button
-                      onClick={() => handlePlayTrack(track)}
+                      onClick={() => handlePlayTrack(track, idx)}
                       style={{
                         background: "transparent",
                         border: "none",
@@ -154,6 +188,20 @@ export const PlaylistDetailPage = () => {
                     >
                       <Play size={15} fill="currentColor" />
                     </button>
+                    {(track.cover_url || track.artwork_url) && (
+                      <img
+                        src={track.cover_url || track.artwork_url}
+                        alt={track.title}
+                        style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "var(--radius-sm)",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                          backgroundColor: "rgba(255, 255, 255, 0.05)",
+                        }}
+                      />
+                    )}
                     <div style={{ overflow: "hidden" }}>
                       <div style={{ color: "#FFFFFF", fontSize: "14px", fontWeight: 600, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
                         {track.title || "Track"}

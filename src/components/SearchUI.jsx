@@ -3,8 +3,10 @@
  * Flow: search → display results → on Play: ingest → stream-link → playTrack()
  */
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Play, Plus, Loader2, RotateCcw } from "lucide-react";
+import { Search, Play, Plus, Loader2, RotateCcw, ListPlus } from "lucide-react";
 import { usePlayer } from "../context/PlayerContext";
+import { useAuth } from "../context/AuthContext";
+import { AddToPlaylistModal } from "./AddToPlaylistModal";
 
 export const SearchUI = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,8 +14,10 @@ export const SearchUI = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingTrackId, setLoadingTrackId] = useState(null);
+  const [playlistTrack, setPlaylistTrack] = useState(null);
 
   const { playTrack, addToQueue } = usePlayer();
+  const { isAuthenticated } = useAuth();
   const timerRef = useRef(null);
 
   const executeSearch = async (query) => {
@@ -353,15 +357,35 @@ export const SearchUI = () => {
                     className="btn-glass"
                     style={{ padding: "6px 10px", fontSize: "12px" }}
                     aria-label={`Queue ${result.title}`}
+                    title="Add to queue"
                   >
                     <Plus size={14} />
                   </button>
+                  {isAuthenticated && (
+                    <button
+                      data-testid={`add-playlist-search-${result.apple_track_id}`}
+                      onClick={() => setPlaylistTrack(result)}
+                      disabled={isTrackLoading}
+                      className="btn-glass"
+                      style={{ padding: "6px 10px", fontSize: "12px" }}
+                      aria-label={`Add ${result.title} to playlist`}
+                      title="Add to Playlist"
+                    >
+                      <ListPlus size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <AddToPlaylistModal
+        track={playlistTrack}
+        isOpen={Boolean(playlistTrack)}
+        onClose={() => setPlaylistTrack(null)}
+      />
     </div>
   );
 };

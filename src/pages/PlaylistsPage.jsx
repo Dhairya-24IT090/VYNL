@@ -2,24 +2,35 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
-import { ListMusic, Plus, Trash2 } from "lucide-react";
+import { usePlayer } from "../context/PlayerContext";
+import { ListMusic, Plus, Trash2, Play, Shuffle, Loader2 } from "lucide-react";
 
 export const PlaylistsPage = () => {
   const { isAuthenticated } = useAuth();
+  const { playPlaylist } = usePlayer();
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+  const [error, setError] = useState(null);
 
   const fetchPlaylists = () => {
     if (!isAuthenticated) {
       setLoading(false);
       return;
     }
+    setLoading(true);
+    setError(null);
     api
       .get("/v1/playlists/")
-      .then((data) => setPlaylists(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.playlists || []);
+        setPlaylists(list);
+      })
+      .catch((err) => {
+        setError(err?.message || "Failed to load playlists.");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -29,13 +40,22 @@ export const PlaylistsPage = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || creating) return;
+    setCreating(true);
+    setError(null);
     try {
       const pl = await api.post("/v1/playlists/", { name: name.trim() });
-      setPlaylists((prev) => [pl, ...prev]);
+      if (pl && pl.playlist_id) {
+        setPlaylists((prev) => [pl, ...prev.filter((p) => p.playlist_id !== pl.playlist_id)]);
+      }
       setName("");
       setIsCreating(false);
-    } catch {}
+      fetchPlaylists();
+    } catch (err) {
+      setError(err?.message || "Failed to create playlist.");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleDelete = async (e, playlistId) => {
@@ -44,6 +64,30 @@ export const PlaylistsPage = () => {
     try {
       await api.delete(`/v1/playlists/${playlistId}`);
       setPlaylists((prev) => prev.filter((p) => p.playlist_id !== playlistId));
+    } catch (err) {
+      setError(err?.message || "Failed to delete playlist.");
+    }
+  };
+
+  const handlePlayPlaylist = async (e, playlistId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const details = await api.get(`/v1/playlists/${playlistId}`);
+      if (details.tracks && details.tracks.length > 0) {
+        await playPlaylist(details.tracks, { shuffle: false });
+      }
+    } catch {}
+  };
+
+  const handleShufflePlaylist = async (e, playlistId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const details = await api.get(`/v1/playlists/${playlistId}`);
+      if (details.tracks && details.tracks.length > 0) {
+        await playPlaylist(details.tracks, { shuffle: true });
+      }
     } catch {}
   };
 
@@ -79,13 +123,39 @@ export const PlaylistsPage = () => {
         </div>
 
         <button
-          onClick={() => setIsCreating((prev) => !prev)}
+          onClick={() => {
+            setIsCreating((prev) => !prev);
+            setError(null);
+          }}
           className="btn-glass"
           style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}
         >
           <Plus size={16} /> New Playlist
         </button>
       </header>
+
+      {error && (
+        <div
+          className="glass-panel"
+          style={{
+            padding: "12px 16px",
+            borderColor: "var(--color-danger)",
+            color: "var(--color-danger)",
+            fontSize: "14px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            style={{ background: "transparent", border: "none", color: "inherit", cursor: "pointer" }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {isCreating && (
         <form
@@ -98,6 +168,7 @@ export const PlaylistsPage = () => {
             placeholder="Playlist name..."
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={creating}
             autoFocus
             style={{
               flex: 1,
@@ -109,11 +180,18 @@ export const PlaylistsPage = () => {
               fontSize: "14px",
             }}
           />
-          <button type="submit" className="btn-glass" style={{ padding: "10px 20px" }}>
+          <button
+            type="submit"
+            disabled={creating || !name.trim()}
+            className="btn-glass"
+            style={{ padding: "10px 20px", display: "flex", alignItems: "center", gap: "6px" }}
+          >
+            {creating ? <Loader2 size={15} className="animate-spin" /> : null}
             Create
           </button>
           <button
             type="button"
+            disabled={creating}
             onClick={() => setIsCreating(false)}
             style={{
               background: "transparent",
@@ -146,53 +224,109 @@ export const PlaylistsPage = () => {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
             gap: "16px",
           }}
         >
-          {playlists.map((pl) => (
-            <Link
-              key={pl.playlist_id}
-              to={`/playlists/${pl.playlist_id}`}
-              className="glass-panel"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                padding: "20px",
-                textDecoration: "none",
-                color: "#FFFFFF",
-                borderRadius: "var(--radius-card)",
-                transition: "transform var(--duration-fast)",
-                justifyContent: "space-between",
-                minHeight: "130px",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "16px", fontWeight: 700, marginBottom: "6px" }}>
-                  {pl.name}
+          {playlists.map((pl) => {
+            const trackCount = pl.track_count || pl.tracks?.length || 0;
+            return (
+              <Link
+                key={pl.playlist_id}
+                to={`/playlists/${pl.playlist_id}`}
+                className="glass-panel hover-scale"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "20px",
+                  textDecoration: "none",
+                  color: "#FFFFFF",
+                  borderRadius: "var(--radius-card)",
+                  transition: "all var(--duration-fast)",
+                  justifyContent: "space-between",
+                  minHeight: "140px",
+                  position: "relative",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "17px", fontWeight: 700, marginBottom: "6px", wordBreak: "break-word" }}>
+                    {pl.name}
+                  </div>
+                  <div style={{ fontSize: "13px", color: "var(--color-text-tertiary)" }}>
+                    {trackCount} {trackCount === 1 ? "track" : "tracks"}
+                  </div>
                 </div>
-                <div style={{ fontSize: "13px", color: "var(--color-text-tertiary)" }}>
-                  {pl.track_count || pl.tracks?.length || 0} tracks
-                </div>
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
-                <button
-                  onClick={(e) => handleDelete(e, pl.playlist_id)}
-                  title="Delete playlist"
+                <div
                   style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--color-text-tertiary)",
-                    cursor: "pointer",
-                    padding: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginTop: "16px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid var(--color-border-subtle)",
                   }}
                 >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </Link>
-          ))}
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {trackCount > 0 && (
+                      <>
+                        <button
+                          onClick={(e) => handlePlayPlaylist(e, pl.playlist_id)}
+                          title="Play all"
+                          style={{
+                            background: "rgba(255, 255, 255, 0.08)",
+                            border: "1px solid var(--color-border-subtle)",
+                            borderRadius: "var(--radius-pill)",
+                            color: "var(--color-accent)",
+                            cursor: "pointer",
+                            padding: "6px 10px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          <Play size={12} fill="currentColor" /> Play
+                        </button>
+                        <button
+                          onClick={(e) => handleShufflePlaylist(e, pl.playlist_id)}
+                          title="Shuffle playlist"
+                          style={{
+                            background: "rgba(255, 255, 255, 0.08)",
+                            border: "1px solid var(--color-border-subtle)",
+                            borderRadius: "var(--radius-pill)",
+                            color: "var(--color-accent)",
+                            cursor: "pointer",
+                            padding: "6px 10px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          <Shuffle size={12} /> Shuffle
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={(e) => handleDelete(e, pl.playlist_id)}
+                    title="Delete playlist"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--color-text-tertiary)",
+                      cursor: "pointer",
+                      padding: "4px",
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

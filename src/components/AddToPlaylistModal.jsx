@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../services/apiClient";
-import { X, Plus, Check } from "lucide-react";
+import { X, Plus, Check, Loader2 } from "lucide-react";
 
 export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
   const [playlists, setPlaylists] = useState([]);
@@ -8,40 +8,98 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [addedIds, setAddedIds] = useState(new Set());
   const [creating, setCreating] = useState(false);
+  const [addingToId, setAddingToId] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
+    setError(null);
     api
       .get("/v1/playlists/")
-      .then((data) => setPlaylists(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.playlists || []);
+        setPlaylists(list);
+      })
+      .catch((err) => {
+        setError(err?.message || "Failed to load playlists.");
+      })
       .finally(() => setLoading(false));
   }, [isOpen]);
 
   if (!isOpen || !track) return null;
 
-  const trackId = track.track_id || track.id;
+  const resolveTrack = async (targetTrack) => {
+    let resolvedId = targetTrack.track_id || targetTrack.id;
+    if (resolvedId) return resolvedId;
+
+    if (targetTrack.apple_track_id || (targetTrack.title && targetTrack.artist)) {
+      try {
+        const ingestRes = await fetch("/api/v1/tracks/ingest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: targetTrack.title,
+            artist: targetTrack.artist,
+            apple_track_id: targetTrack.apple_track_id,
+            apple_music_url: targetTrack.apple_music_url,
+          }),
+        });
+        if (ingestRes.ok) {
+          const ingestData = await ingestRes.json();
+          if (ingestData?.track_id) {
+            targetTrack.track_id = ingestData.track_id;
+            return ingestData.track_id;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  };
 
   const handleAddToPlaylist = async (playlistId) => {
+    setAddingToId(playlistId);
+    setError(null);
     try {
-      await api.post(`/v1/playlists/${playlistId}/tracks`, { track_id: trackId });
+      const resolvedId = await resolveTrack(track);
+      if (!resolvedId) {
+        throw new Error("Could not prepare track for playlist.");
+      }
+      await api.post(`/v1/playlists/${playlistId}/tracks`, {
+        track_id: resolvedId,
+        title: track.title,
+        artist: track.artist,
+        cover_url: track.cover_url || track.artwork_url,
+        duration_seconds:
+          track.duration_seconds ||
+          (track.duration_ms ? Math.round(track.duration_ms / 1000) : 0),
+      });
       setAddedIds((prev) => new Set([...prev, playlistId]));
-    } catch {}
+    } catch (err) {
+      setError(err?.message || "Failed to add track to playlist.");
+    } finally {
+      setAddingToId(null);
+    }
   };
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || creating) return;
     setCreating(true);
+    setError(null);
     try {
       const created = await api.post("/v1/playlists/", { name: newTitle.trim() });
-      setPlaylists((prev) => [created, ...prev]);
-      setNewTitle("");
-      if (created.playlist_id) {
+      if (created && created.playlist_id) {
+        setPlaylists((prev) => [
+          created,
+          ...prev.filter((p) => p.playlist_id !== created.playlist_id),
+        ]);
+        setNewTitle("");
         await handleAddToPlaylist(created.playlist_id);
       }
-    } catch {} finally {
+    } catch (err) {
+      setError(err?.message || "Failed to create playlist.");
+    } finally {
       setCreating(false);
     }
   };
@@ -109,6 +167,21 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
           "{track.title}" by {track.artist}
         </p>
 
+        {error && (
+          <div
+            style={{
+              padding: "8px 12px",
+              borderRadius: "var(--radius-sm)",
+              backgroundColor: "rgba(239, 68, 68, 0.15)",
+              color: "var(--color-danger)",
+              fontSize: "12px",
+              marginBottom: "12px",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         <form
           onSubmit={handleCreate}
           style={{ display: "flex", gap: "8px", marginBottom: "16px" }}
@@ -118,6 +191,7 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
             placeholder="New playlist name..."
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
+            disabled={creating}
             style={{
               flex: 1,
               padding: "8px 12px",
@@ -132,9 +206,16 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
             type="submit"
             disabled={creating || !newTitle.trim()}
             className="btn-glass"
-            style={{ padding: "8px 14px", fontSize: "13px" }}
+            style={{
+              padding: "8px 14px",
+              fontSize: "13px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
           >
-            <Plus size={15} /> Create
+            {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={15} />}
+            Create
           </button>
         </form>
 
@@ -158,10 +239,12 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
           ) : (
             playlists.map((pl) => {
               const isAdded = addedIds.has(pl.playlist_id);
+              const isAdding = addingToId === pl.playlist_id;
               return (
                 <button
                   key={pl.playlist_id}
                   onClick={() => handleAddToPlaylist(pl.playlist_id)}
+                  disabled={isAdding}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -173,14 +256,29 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
                       : "transparent",
                     border: "1px solid var(--color-border-subtle)",
                     color: "#FFFFFF",
-                    cursor: "pointer",
+                    cursor: isAdding ? "default" : "pointer",
                     textAlign: "left",
                   }}
                 >
                   <span style={{ fontSize: "14px", fontWeight: 500 }}>
                     {pl.name}
                   </span>
-                  {isAdded && <Check size={16} color="var(--color-success)" />}
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    {isAdding && <Loader2 size={14} className="animate-spin" />}
+                    {isAdded && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          fontSize: "12px",
+                          color: "var(--color-accent)",
+                        }}
+                      >
+                        <Check size={14} /> Added
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })
