@@ -1,100 +1,70 @@
-# Project Context — VYNL Music Streaming Platform
+# Project Context — VYNL Frontend Client
 
-Living context and operational state for developers and AI agents working on the VYNL workspace.
+Handoff reference and living documentation for the VYNL React + Vite web client.
 
 ---
 
-## 1. Workspace & Architecture Overview
+## 1. Project Overview & Architecture
 
-VYNL is an end-to-end continuous music streaming web application designed with high aesthetic standards, real-time telemetry, personalized recommendations, and instant audio ingestion and delivery.
+VYNL Frontend is a high-performance, dark-themed music streaming client built with React 19 and Vite. It provides seamless continuous audio playback, search-to-stream capabilities, queue management, recommendation discovery, and playlist curation.
 
-### Directory Structure & Responsibilities
+### Directory Structure
 
 ```
-New folder/
-├── RULES.md                      # Agent operating rules & non-negotiable constraints
-├── Context.md                    # System-wide living context document
-├── Changelog.md                  # Unified reverse-chronological change record
-├── VYNL/                         # Frontend client (Vite + React 19)
-│   ├── src/
-│   │   ├── components/           # UI components (TrackCard, SearchUI, AddToPlaylistModal, NowPlayingBar, etc.)
-│   │   ├── context/              # Global state (PlayerContext, AuthContext, BackdropContext)
-│   │   ├── pages/                # App views (HomePage, DiscoverPage, PlaylistsPage, PlaylistDetailPage, etc.)
-│   │   └── services/             # API client (apiClient.js), event telemetry (eventBuffer.js)
-│   ├── tests/                    # Vitest testing suite
-│   ├── package.json
-│   └── vite.config.js            # Reverse proxies for /v1 (8001), /api & /stream (8000)
-├── vynl-backend/                 # Core backend service (FastAPI, Port 8001)
-│   ├── app/
-│   │   ├── api/                  # Endpoints (auth, playlists, library, recommendations, history)
-│   │   ├── db/                   # MongoDB connection & indexes
-│   │   ├── services/             # Domain logic (PlaylistService, RecommendationEngine, etc.)
-│   │   └── utils/                # JWT tokens, doc serialization, cosine math
-│   ├── tests/                    # Pytest test suite
-│   └── requirements.txt
-└── vynl-streaming/               # Audio streaming microservice (FastAPI, Port 8000)
-    ├── app/
-    │   ├── api/                  # Endpoints (search, resolve, ingest, stream tokens)
-    │   ├── db/                   # Audio MongoDB client (vynl_audio database)
-    │   └── services/             # Apple Music / iTunes resolver, Telegram CDN uploader
-    └── requirements.txt
+VYNL/
+├── src/
+│   ├── components/
+│   │   ├── AddToPlaylistModal.jsx  # Modal for adding songs to playlists with automatic track ingest
+│   │   ├── Navigation.jsx          # Sidebar navigation with active state indicators
+│   │   ├── NowPlayingBar.jsx       # Floating bottom audio player with scrubber & controls
+│   │   ├── QueueDrawer.jsx         # Collapsible sliding queue drawer
+│   │   ├── SearchUI.jsx            # Live iTunes search with Ingest, Play, Queue & Add-to-Playlist
+│   │   └── TrackCard.jsx           # Grid track card with hover actions, like, radio, & playlist options
+│   ├── context/
+│   │   ├── AuthContext.jsx         # Session state, user profile, login & logout handlers
+│   │   ├── BackdropContext.jsx     # Dynamic UI backdrop colors extracted from album art
+│   │   └── PlayerContext.jsx       # Audio element controller, persistent queue, and playlist shuffle
+│   ├── pages/
+│   │   ├── DiscoverPage.jsx        # Discovery page housing the SearchUI
+│   │   ├── HomePage.jsx            # Personalized recommendation feed & quick start tracks
+│   │   ├── LibraryPage.jsx         # Saved/liked tracks
+│   │   ├── LoginPage.jsx           # Sign-in screen with OAuth triggers
+│   │   ├── OnboardingPage.jsx      # Genre & artist onboarding taste quiz
+│   │   ├── PlaylistDetailPage.jsx  # Playlist tracklist with Play All & Shuffle controls
+│   │   └── PlaylistsPage.jsx       # User playlists gallery with creation form & card quick actions
+│   ├── services/
+│   │   ├── apiClient.js            # W3C traceparent, CSRF token injection & HTTP helpers
+│   │   └── eventBuffer.js          # Batched telemetry buffer sending plays/skips every 5s
+│   ├── App.jsx                     # Layout shell & React Router route definitions
+│   ├── index.css                   # Core tokens, glassmorphism utilities & theme variables
+│   └── main.jsx                    # Application entry point
+├── tests/                          # Vitest & React Testing Library test suite
+├── package.json
+└── vite.config.js                  # Proxies /v1 -> 8001 (Backend) & /api, /stream -> 8000 (Streaming)
 ```
 
-### Dual-Mount & Routing Map
+---
 
-- **Frontend Client**: Runs on `http://localhost:5173`
-- **Core Backend (`vynl-backend`)**: Runs on `http://localhost:8001`
-  - Routes mounted at `/v1/*` and `/api/v1/*` for playlists, auth, user profiles, library, activity, recommendations.
-- **Audio Streaming Service (`vynl-streaming`)**: Runs on `http://localhost:8000`
-  - Routes mounted at `/api/*` and `/stream/*` for track search (iTunes), audio ingest/download, and Telegram CDN streaming.
+## 2. Implemented Features & Workflows
+
+### Playlists
+- **Multiple Custom Playlists**: Unlimited playlists can be created via `PlaylistsPage.jsx` or inline within `AddToPlaylistModal.jsx`.
+- **Defensive API Ingestion**: Safely unwraps `{ playlists: [...] }` from `/v1/playlists/` avoiding state wipeouts.
+- **Card Quick Actions**: Play and Shuffle buttons directly on each playlist card in the gallery grid.
+- **Detail View & True Shuffle**:
+  - `PlaylistDetailPage.jsx` includes both "Play All" (sequential) and "Shuffle" (Fisher-Yates randomized queue).
+  - Individual track row clicking starts playback from that index while enqueuing the remainder of the playlist.
+- **Search Result Integration**: Every track returned from `SearchUI.jsx` exposes an "Add to Playlist" action that automatically ingests the track if unindexed before linking to the playlist.
+
+### Audio Player & Queue
+- Persistent global HTML5 audio player managed in `PlayerContext.jsx`.
+- Dynamic on-the-fly stream link resolution (`/api/v1/tracks/${trackId}/stream-link`) when songs queued without URLs begin playing.
+- Background telemetry flushes via `eventBuffer.js`.
 
 ---
 
-## 2. Full Feature List
+## 3. Key Conventions & Styling
 
-### Implemented
-- **Personalized Playlist Management**:
-  - Unlimited user-created custom playlists with persistent metadata in MongoDB.
-  - Playlist creation, listing, inspection, track deletion, and playlist deletion.
-  - Quick action controls (Play and Shuffle) on both playlist gallery cards and playlist detail views.
-- **Search & Ingest Integration**:
-  - Live iTunes track search with real-time debouncing.
-  - One-click track ingest and direct "Add to Playlist" action on all search results.
-  - Multi-source playlist insertion from search results, library, and recommended track cards.
-- **Queue & Continuous Playback**:
-  - Persistent HTML5 audio playback across route transitions.
-  - In-context stream URL resolution for queued and shuffled tracks.
-  - True randomized playlist shuffling via Fisher-Yates algorithm.
-- **Authentication**:
-  - Google OAuth with seamless local dev fallback (`/v1/auth/google/callback?code=dev_mock_code`).
-  - HttpOnly cookies (`access_token`, `refresh_token`, `csrf_token`) with transparent token refresh.
-- **Audio Streaming Pipeline**:
-  - Track resolution, dedup checking, background telegram storage, and time-limited tokenized stream URLs.
-
-### In-Progress / Planned
-- Collaborative real-time playlist editing with version concurrency recovery.
-- Synced time-coded lyrics viewer.
-- Monthly user wrap visualizer.
-
----
-
-## 3. Key Conventions & Patterns
-
-- **Defensive API Extraction**: Endpoints returning wrappers like `{ "playlists": [...] }` or `{ "tracks": [...] }` must always be defensively unwrapped on the frontend via `Array.isArray(data) ? data : (data?.playlists || [])`.
-- **Dry & Modular Design**: Modals like [AddToPlaylistModal.jsx](file:///c:/Projects/New%20folder/VYNL/src/components/AddToPlaylistModal.jsx) are shared across search, library, and recommendation surfaces.
-- **Track Identification**: Tracks may originate as external references (`apple_track_id`) or internal ingested entities (`track_id`). Any action requiring playback or library persistence resolves or ingests the track first to acquire a persistent `track_id`.
-
----
-
-## 4. Operational Categories
-
-### UI/Motion
-- Clean glassmorphism theme (`glass-panel`, `glass-card`, `btn-glass`) with curated dark palette.
-- Hover scales, active feedback badges ("Added"), and micro-spinners for asynchronous actions.
-
-### SEO
-- Semantic page headers, descriptive titles, unique test IDs (`data-testid`), and accessible keyboard-operable elements.
-
-### Audit Findings
-- Resolved silent promise catches in playlist creation and addition flows.
-- Ensured proper CORS handling and credentials forwarding across Vite proxy targets.
+- **Glassmorphism**: Standard classes `.glass-panel`, `.glass-card`, `.btn-glass` with backdrop-filter blur and subtle border highlights.
+- **Icons**: Standardized on `lucide-react` (icons include `Play`, `Shuffle`, `Plus`, `ListPlus`, `Trash2`, `Heart`, `ListMusic`).
+- **Responsive Breakpoints**: Grid auto-fill layouts adapting from mobile screens (375px) to wide monitors (1440px).
