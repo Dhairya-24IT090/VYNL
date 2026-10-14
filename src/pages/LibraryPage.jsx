@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
 import { TrackCard } from "../components/TrackCard";
+import { TrackRow } from "../components/TrackRow";
 import { Heart, Compass } from "lucide-react";
 
 export const LibraryPage = () => {
@@ -94,16 +95,19 @@ export const LibraryPage = () => {
         </div>
       ) : (
         <div
+          className="glass-panel"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: "16px",
+            borderRadius: "var(--radius-panel)",
+            backgroundColor: "rgba(255, 255, 255, 0.02)",
+            overflow: "hidden",
+            boxShadow: "var(--shadow-card)",
           }}
         >
-          {tracks.map((track) => (
-            <TrackCard
+          {tracks.map((track, i) => (
+            <TrackRow
               key={track.track_id || track.id}
               track={{ ...track, saved: true, is_liked: true }}
+              index={i}
               onRemoveFromLibrary={handleRemoveTrack}
             />
           ))}

@@ -136,21 +136,24 @@ export const OnboardingPage = () => {
               key={g.id}
               onClick={() => toggleGenre(g.id)}
               type="button"
-              className="glass-panel"
+              className="glass-card hover-lift"
               style={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "10px",
-                padding: "20px 14px",
+                gap: "12px",
+                padding: "24px 16px",
                 cursor: "pointer",
+                borderRadius: "var(--radius-card)",
                 border: isSelected
-                  ? "1px solid var(--color-accent)"
-                  : "1px solid var(--color-border-subtle)",
+                  ? "1px solid rgba(255, 255, 255, 0.4)"
+                  : "1px solid var(--border-glass)",
                 backgroundColor: isSelected
-                  ? "var(--color-surface-glass-active)"
-                  : "var(--color-surface-glass)",
+                  ? "rgba(255, 255, 255, 0.14)"
+                  : "rgba(255, 255, 255, 0.04)",
+                backdropFilter: "blur(var(--blur-glass))",
+                WebkitBackdropFilter: "blur(var(--blur-glass))",
                 transition: "all var(--duration-fast)",
                 color: "#FFFFFF",
               }}

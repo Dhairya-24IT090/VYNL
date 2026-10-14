@@ -132,12 +132,13 @@ export const AddToPlaylistModal = ({ track, isOpen, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="glass-panel"
+        className="glass-panel modal-bottom-sheet"
         data-testid="add-to-playlist-dialog"
         style={{
           width: "100%",
-          maxWidth: "420px",
-          padding: "24px",
+          maxWidth: "460px",
+          padding: "28px",
+          borderRadius: "var(--radius-card)",
           backgroundColor: "rgba(22, 22, 26, 0.95)",
           boxShadow: isSwooshing
             ? "0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 255, 255, 0.15)"

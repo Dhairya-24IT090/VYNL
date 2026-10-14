@@ -234,25 +234,39 @@ export const PlaylistsPage = () => {
               <Link
                 key={pl.playlist_id}
                 to={`/playlists/${pl.playlist_id}`}
-                className="glass-panel hover-scale"
+                className="glass-card hover-lift"
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  padding: "20px",
+                  padding: "24px",
                   textDecoration: "none",
                   color: "#FFFFFF",
                   borderRadius: "var(--radius-card)",
-                  transition: "all var(--duration-fast)",
+                  transition: "all var(--duration-normal)",
                   justifyContent: "space-between",
-                  minHeight: "140px",
+                  minHeight: "160px",
                   position: "relative",
+                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)",
+                  border: "1px solid var(--border-glass)",
+                  backdropFilter: "blur(var(--blur-glass))",
+                  WebkitBackdropFilter: "blur(var(--blur-glass))",
+                  boxShadow: "var(--shadow-fan)",
                 }}
               >
                 <div>
-                  <div style={{ fontSize: "17px", fontWeight: 700, marginBottom: "6px", wordBreak: "break-word" }}>
+                  <div
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: 600,
+                      marginBottom: "6px",
+                      wordBreak: "break-word",
+                      color: "#FFFFFF",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
                     {pl.name}
                   </div>
-                  <div style={{ fontSize: "13px", color: "var(--color-text-tertiary)" }}>
+                  <div style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.6)" }}>
                     {trackCount} {trackCount === 1 ? "track" : "tracks"}
                   </div>
                 </div>
@@ -262,28 +276,26 @@ export const PlaylistsPage = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    marginTop: "16px",
-                    paddingTop: "12px",
+                    marginTop: "20px",
+                    paddingTop: "14px",
                     borderTop: "1px solid var(--color-border-subtle)",
                   }}
                 >
-                  <div style={{ display: "flex", gap: "6px" }}>
+                  <div style={{ display: "flex", gap: "8px" }}>
                     {trackCount > 0 && (
                       <>
                         <button
                           onClick={(e) => handlePlayPlaylist(e, pl.playlist_id)}
                           title="Play all"
+                          className="btn-glass"
                           style={{
-                            background: "rgba(255, 255, 255, 0.08)",
-                            border: "1px solid var(--color-border-subtle)",
                             borderRadius: "var(--radius-pill)",
-                            color: "var(--color-accent)",
-                            cursor: "pointer",
-                            padding: "6px 10px",
+                            padding: "6px 14px",
                             display: "flex",
                             alignItems: "center",
-                            gap: "4px",
+                            gap: "6px",
                             fontSize: "12px",
+                            fontWeight: 600,
                           }}
                         >
                           <Play size={12} fill="currentColor" /> Play
@@ -291,17 +303,15 @@ export const PlaylistsPage = () => {
                         <button
                           onClick={(e) => handleShufflePlaylist(e, pl.playlist_id)}
                           title="Shuffle playlist"
+                          className="btn-glass"
                           style={{
-                            background: "rgba(255, 255, 255, 0.08)",
-                            border: "1px solid var(--color-border-subtle)",
                             borderRadius: "var(--radius-pill)",
-                            color: "var(--color-accent)",
-                            cursor: "pointer",
-                            padding: "6px 10px",
+                            padding: "6px 14px",
                             display: "flex",
                             alignItems: "center",
-                            gap: "4px",
+                            gap: "6px",
                             fontSize: "12px",
+                            fontWeight: 600,
                           }}
                         >
                           <Shuffle size={12} /> Shuffle
@@ -313,12 +323,11 @@ export const PlaylistsPage = () => {
                   <button
                     onClick={(e) => handleDelete(e, pl.playlist_id)}
                     title="Delete playlist"
+                    className="btn-circle"
                     style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "var(--color-text-tertiary)",
-                      cursor: "pointer",
-                      padding: "4px",
+                      width: "36px",
+                      height: "36px",
+                      color: "rgba(255, 255, 255, 0.6)",
                     }}
                   >
                     <Trash2 size={16} />

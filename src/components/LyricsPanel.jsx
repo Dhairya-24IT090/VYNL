@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   X,
-  Maximize2,
   Minimize2,
   Palette,
   ArrowDownCircle,
   Music,
+  Heart,
+  ListPlus,
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { useLyrics } from '../hooks/useLyrics';
@@ -14,13 +21,28 @@ import { getFontById, ensureGoogleFontsLoaded } from '../config/lyricsFonts';
 import { getBackgroundById } from '../config/lyricsBackgrounds';
 import { findActiveLineIndex } from '../utils/lrc';
 import { LyricsCustomizer } from './LyricsCustomizer';
+import { AddToPlaylistModal } from './AddToPlaylistModal';
 
 export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
-  const { currentTrack: contextTrack, seek, getAudioCurrentTime, progress } = usePlayer();
+  const {
+    currentTrack: contextTrack,
+    isPlaying,
+    progress,
+    duration,
+    volume,
+    togglePlay,
+    seek,
+    setVolume,
+    nextTrack,
+    prevTrack,
+    toggleLike,
+    getAudioCurrentTime,
+  } = usePlayer();
+
   const currentTrack = overrideTrack || contextTrack;
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
   const [userScrolledAway, setUserScrolledAway] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -33,7 +55,6 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
   const {
     status,
     syncedLines,
-    plainLines,
     isEstimated,
     isInstrumental,
     isLoading,
@@ -56,15 +77,15 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
   // Handle ESC key to exit fullscreen
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
       }
     };
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isFullscreen]);
+  }, [isOpen, onClose]);
 
   // High-performance time tracking with requestAnimationFrame
   useEffect(() => {
@@ -135,7 +156,17 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
     seek(lineTime);
   };
 
+  const formatTime = (seconds) => {
+    if (isNaN(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   if (!isOpen) return null;
+
+  const isLiked = !!currentTrack?.is_liked;
+  const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
   // Build Layered Glow Style
   const glowTextShadow =
@@ -143,65 +174,25 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
       ? `0 0 ${style.glow * 0.2}px ${style.color}, 0 0 ${style.glow * 0.5}px ${style.color}, 0 2px 4px rgba(0, 0, 0, 0.9)`
       : '0 2px 4px rgba(0, 0, 0, 0.9)';
 
-  const panelStyles = isFullscreen
-    ? {
-        position: 'fixed',
-        inset: 0,
-        zIndex: 150,
-        width: '100vw',
-        height: '100vh',
-        borderRadius: 0,
-      }
-    : {
-        position: 'fixed',
-        right: '20px',
-        bottom: '110px',
-        width: 'min(460px, calc(100vw - 40px))',
-        height: 'calc(100vh - 140px)',
-        maxHeight: '680px',
-        zIndex: 90,
-        borderRadius: 'var(--radius-lg, 16px)',
-      };
-
   return (
     <aside
       data-testid="lyrics-panel"
-      className="glass-panel"
-      style={{
-        ...panelStyles,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        boxShadow: 'var(--shadow-floating, 0 16px 36px rgba(0, 0, 0, 0.6))',
-        border: '1px solid rgba(255, 255, 255, 0.14)',
-        transition: prefersReducedMotion ? 'none' : 'all 250ms ease',
-      }}
-      aria-label="Synchronized Lyrics"
+      className="lyrics-fullscreen-overlay lyrics-drawer-panel lyrics-fullscreen"
+      aria-label="Synchronized Lyrics Fullscreen"
     >
-      {/* 1. Background image layer */}
-      {currentBg?.url ? (
+      {/* 1. Background image / gradient layer */}
+      {currentBg?.url || currentTrack?.cover_url ? (
         <img
-          src={currentBg.url}
-          alt={currentBg.label}
+          src={currentBg?.url || currentTrack?.cover_url}
+          alt={currentBg?.label || currentTrack?.title}
+          className="lyrics-fullscreen-bg-image"
           style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: 1,
+            filter: style.bgBlur > 0 ? `blur(${style.bgBlur}px)` : 'none',
+            transform: style.bgBlur > 0 ? 'scale(1.04)' : 'none',
           }}
         />
       ) : (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(135deg, rgba(20, 20, 30, 0.96) 0%, rgba(10, 10, 14, 0.98) 100%)',
-            zIndex: 1,
-          }}
-        />
+        <div className="lyrics-fullscreen-bg-fallback" />
       )}
 
       {/* 2. User-controlled dark overlay */}
@@ -216,25 +207,14 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
         }}
       />
 
-      {/* 3. Panel Header */}
-      <header
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          backdropFilter: 'blur(8px)',
-        }}
-      >
+      {/* 3. Top Header Bar */}
+      <header className="lyrics-fullscreen-header">
         <div style={{ overflow: 'hidden', maxWidth: '65%' }}>
           <h2
             data-testid="lyrics-track-title"
             style={{
-              fontSize: '14px',
-              fontWeight: 600,
+              fontSize: '18px',
+              fontWeight: 700,
               color: '#FFFFFF',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -247,12 +227,12 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
           <p
             data-testid="lyrics-track-artist"
             style={{
-              fontSize: '12px',
+              fontSize: '13px',
               color: 'var(--color-text-secondary, #aaa)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              margin: '2px 0 0 0',
+              margin: '3px 0 0 0',
             }}
           >
             {currentTrack?.artist || 'Unknown Artist'}
@@ -260,14 +240,14 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {isEstimated && (
             <span
               data-testid="estimated-sync-badge"
               style={{
-                fontSize: '10px',
-                padding: '3px 7px',
-                borderRadius: '10px',
+                fontSize: '11px',
+                padding: '4px 10px',
+                borderRadius: '12px',
                 backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 color: 'var(--color-text-secondary, #ddd)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -281,76 +261,40 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
             onClick={() => setIsCustomizerOpen((prev) => !prev)}
             aria-label="Customize Lyrics"
             data-testid="customize-lyrics-btn"
-            style={{
-              background: isCustomizerOpen
-                ? 'rgba(255, 255, 255, 0.15)'
-                : 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              color: isCustomizerOpen ? '#FFFFFF' : 'var(--color-text-secondary, #aaa)',
-              cursor: 'pointer',
-              padding: '6px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
+            className="btn-circle player-notch-action-btn"
+            style={{ width: '42px', height: '42px' }}
           >
             <Palette size={18} />
           </button>
 
           <button
-            onClick={() => setIsFullscreen((prev) => !prev)}
-            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Expand Fullscreen'}
+            onClick={onClose}
+            aria-label="Exit Fullscreen"
             data-testid="expand-lyrics-btn"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              color: 'var(--color-text-secondary, #aaa)',
-              cursor: 'pointer',
-              padding: '6px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
+            className="btn-circle player-notch-action-btn"
+            style={{ width: '42px', height: '42px' }}
           >
-            {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            <Minimize2 size={18} />
           </button>
 
           <button
             onClick={onClose}
             aria-label="Close Lyrics"
             data-testid="close-lyrics-btn"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              color: 'var(--color-text-secondary, #aaa)',
-              cursor: 'pointer',
-              padding: '6px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
+            className="btn-circle player-notch-action-btn"
+            style={{ width: '42px', height: '42px' }}
           >
             <X size={18} />
           </button>
         </div>
       </header>
 
-      {/* 4. Lyrics Lines Container */}
+      {/* 4. Fullscreen Lyrics Lines Container */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
         data-testid="lyrics-lines-container"
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          flex: 1,
-          overflowY: 'auto',
-          padding: isFullscreen ? '40px 60px' : '24px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: isFullscreen ? '24px' : '18px',
-          scrollBehavior: prefersReducedMotion ? 'auto' : 'smooth',
-        }}
+        className="lyrics-fullscreen-lines-scroll"
       >
         {/* Loading State */}
         {isLoading && (
@@ -363,19 +307,10 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
               alignItems: 'center',
               gap: '12px',
               color: 'var(--color-text-secondary, #aaa)',
-              fontSize: '13px',
+              fontSize: '15px',
             }}
           >
-            <div
-              style={{
-                width: '24px',
-                height: '24px',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
-                borderTopColor: '#FFFFFF',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-              }}
-            />
+            <div className="player-lyrics-spinner" style={{ width: '32px', height: '32px' }} />
             Fetching lyrics...
           </div>
         )}
@@ -392,11 +327,11 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '12px',
+              gap: '14px',
             }}
           >
-            <Music size={32} opacity={0.6} />
-            <p style={{ fontSize: '14px', margin: 0, fontWeight: 500 }}>
+            <Music size={40} opacity={0.6} />
+            <p style={{ fontSize: '16px', margin: 0, fontWeight: 500 }}>
               {isInstrumental
                 ? 'Instrumental'
                 : 'No lyrics available for this track'}
@@ -425,13 +360,7 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
                 }}
                 style={{
                   fontFamily: currentFont.fallback,
-                  fontSize: isActive
-                    ? isFullscreen
-                      ? '34px'
-                      : '22px'
-                    : isFullscreen
-                      ? '26px'
-                      : '17px',
+                  fontSize: isActive ? '36px' : '26px',
                   fontWeight: isActive ? 700 : 500,
                   lineHeight: 1.45,
                   color: isActive ? style.color : '#FFFFFF',
@@ -458,32 +387,157 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
           onClick={handleJumpToCurrent}
           data-testid="jump-to-current-btn"
           aria-label="Jump to current playing line"
-          style={{
-            position: 'absolute',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 30,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 14px',
-            borderRadius: 'var(--radius-pill, 9999px)',
-            backgroundColor: 'rgba(20, 20, 26, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            color: '#FFFFFF',
-            fontSize: '12px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
-          }}
+          className="player-fullscreen-jump-btn"
         >
-          <ArrowDownCircle size={15} />
+          <ArrowDownCircle size={16} />
           Jump to current
         </button>
       )}
 
-      {/* 6. Customization Sheet */}
+      {/* 6. Bottom Playback Control Cluster Bar */}
+      <footer className="lyrics-fullscreen-bottom-bar">
+        {/* Timeline Scrubber */}
+        <div className="player-timeline-block" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+          <span
+            data-testid="playback-progress-time"
+            className="player-timestamp-label"
+          >
+            {formatTime(progress)}
+          </span>
+
+          <div
+            data-testid="scrubber-container"
+            onClick={(e) => {
+              if (duration <= 0) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pos = (e.clientX - rect.left) / rect.width;
+              seek(pos * duration);
+            }}
+            role="slider"
+            aria-label="Playback Scrubber"
+            aria-valuemin={0}
+            aria-valuemax={duration || 100}
+            aria-valuenow={progress}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') {
+                seek(Math.min(duration, progress + 5));
+              } else if (e.key === 'ArrowLeft') {
+                seek(Math.max(0, progress - 5));
+              }
+            }}
+            className="player-scrubber-rail"
+          >
+            <div
+              data-testid="scrubber-fill"
+              className="player-scrubber-progress"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          <span
+            data-testid="playback-duration-time"
+            className="player-timestamp-label text-right"
+          >
+            {formatTime(duration)}
+          </span>
+        </div>
+
+        {/* Playback Controls Row */}
+        <div className="lyrics-fullscreen-controls-row">
+          {/* Left Cluster: Favorite & Add to Playlist */}
+          <div className="lyrics-fullscreen-side-cluster left">
+            <button
+              data-testid="like-button"
+              onClick={() => toggleLike(currentTrack?.id)}
+              aria-label={isLiked ? 'Unlike Track' : 'Like Track'}
+              className="btn-circle player-aux-btn"
+            >
+              <Heart
+                size={20}
+                fill={isLiked ? '#EF4444' : 'none'}
+                color={isLiked ? '#EF4444' : '#FFFFFF'}
+              />
+            </button>
+
+            <button
+              onClick={() => setIsAddToPlaylistOpen(true)}
+              aria-label="Add to Playlist"
+              className="btn-circle player-aux-btn"
+            >
+              <ListPlus size={20} />
+            </button>
+          </div>
+
+          {/* Center Cluster: Prev, Play/Pause, Next */}
+          <div className="lyrics-fullscreen-center-cluster">
+            <button
+              onClick={prevTrack}
+              disabled={!currentTrack}
+              aria-label="Previous Track"
+              className="btn-circle player-aux-btn"
+            >
+              <SkipBack size={24} />
+            </button>
+
+            <button
+              data-testid="play-pause-button"
+              onClick={togglePlay}
+              disabled={!currentTrack}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              className="btn-circle-play player-center-play-circle"
+              style={{ width: '58px', height: '58px' }}
+            >
+              {isPlaying ? (
+                <Pause size={24} fill="#0F0F0F" color="#0F0F0F" />
+              ) : (
+                <Play size={24} fill="#0F0F0F" color="#0F0F0F" style={{ marginLeft: '3px' }} />
+              )}
+            </button>
+
+            <button
+              onClick={nextTrack}
+              disabled={!currentTrack}
+              aria-label="Next Track"
+              className="btn-circle player-aux-btn"
+            >
+              <SkipForward size={24} />
+            </button>
+          </div>
+
+          {/* Right Cluster: Audio / Volume Slider */}
+          <div className="lyrics-fullscreen-side-cluster right">
+            <button
+              onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
+              aria-label={volume === 0 ? 'Unmute' : 'Mute'}
+              className="btn-circle player-aux-btn"
+            >
+              {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              aria-label="Volume Slider"
+              className="lyrics-fullscreen-volume-slider"
+            />
+          </div>
+        </div>
+      </footer>
+
+      {/* Add To Playlist Modal */}
+      {currentTrack && (
+        <AddToPlaylistModal
+          track={currentTrack}
+          isOpen={isAddToPlaylistOpen}
+          onClose={() => setIsAddToPlaylistOpen(false)}
+        />
+      )}
+
+      {/* Customization Sheet */}
       <LyricsCustomizer
         isOpen={isCustomizerOpen}
         onClose={() => setIsCustomizerOpen(false)}
@@ -495,3 +549,4 @@ export const LyricsPanel = ({ isOpen, onClose, overrideTrack = null }) => {
     </aside>
   );
 };
+

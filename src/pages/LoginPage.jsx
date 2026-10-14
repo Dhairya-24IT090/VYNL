@@ -26,35 +26,39 @@ export const LoginPage = () => {
         className="glass-panel"
         style={{
           padding: "48px 40px",
-          maxWidth: "440px",
+          maxWidth: "460px",
           width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           gap: "20px",
+          borderRadius: "var(--radius-panel)",
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)",
+          border: "1px solid var(--border-glass)",
+          backdropFilter: "blur(var(--blur-glass))",
+          WebkitBackdropFilter: "blur(var(--blur-glass))",
+          boxShadow: "var(--shadow-fan)",
         }}
       >
         <h1
-          className="font-display"
+          className="font-brand"
           style={{
-            fontSize: "28px",
-            fontWeight: 700,
-            background:
-              "linear-gradient(135deg, #FFFFFF 0%, rgba(255, 255, 255, 0.6) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            fontSize: "32px",
+            color: "#FFFFFF",
+            letterSpacing: "0.05em",
+            textTransform: "uppercase",
           }}
         >
-          Welcome to VYNL
+          VYNL
         </h1>
         <p
           style={{
-            fontSize: "14px",
-            color: "var(--color-text-secondary)",
-            lineHeight: 1.5,
+            fontSize: "15px",
+            color: "rgba(255, 255, 255, 0.7)",
+            lineHeight: 1.6,
           }}
         >
-          Sign in to unlock personalized continuous playback, personalized taste recommendations, and cloud playlists.
+          Sign in to unlock personalized continuous playback, taste recommendations, and cloud playlists.
         </p>
 
         <button

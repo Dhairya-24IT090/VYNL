@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { api } from "../services/apiClient";
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export function safeReturnTo(candidate) {
   if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//"))

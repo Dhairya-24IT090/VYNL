@@ -19,6 +19,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 export const AppContent = () => {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isLyricsOpen, setIsLyricsOpen] = useState(false);
+  const [isLyricsFullscreen, setIsLyricsFullscreen] = useState(false);
 
   return (
     <div
@@ -30,15 +31,7 @@ export const AppContent = () => {
     >
       <Navigation />
 
-      <main
-        style={{
-          marginLeft: "280px",
-          flex: 1,
-          padding: "28px 40px 140px 20px",
-          maxWidth: "1200px",
-          width: "calc(100% - 280px)",
-        }}
-      >
+      <main className="app-main-content">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/discover" element={<DiscoverPage />} />
@@ -64,10 +57,14 @@ export const AppContent = () => {
         isQueueOpen={isQueueOpen}
         onToggleLyrics={() => setIsLyricsOpen((prev) => !prev)}
         isLyricsOpen={isLyricsOpen}
+        onOpenFullscreenLyrics={() => setIsLyricsFullscreen(true)}
       />
 
       <QueueDrawer isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
-      <LyricsPanel isOpen={isLyricsOpen} onClose={() => setIsLyricsOpen(false)} />
+      <LyricsPanel
+        isOpen={isLyricsFullscreen}
+        onClose={() => setIsLyricsFullscreen(false)}
+      />
     </div>
   );
 };

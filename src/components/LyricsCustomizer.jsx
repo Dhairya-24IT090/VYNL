@@ -516,6 +516,38 @@ export const LyricsCustomizer = ({
                 }}
               />
             </div>
+
+            {/* Background Blur Slider */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label
+                  htmlFor="lyrics-bg-blur-slider"
+                  style={{ fontSize: '12px', color: 'var(--color-text-secondary, #aaa)' }}
+                >
+                  Background Blur
+                </label>
+                <span
+                  data-testid="blur-value-indicator"
+                  style={{ fontSize: '11px', color: '#fff', fontFamily: 'monospace' }}
+                >
+                  {(style.bgBlur ?? 0) === 0 ? 'Clear (0px)' : `${style.bgBlur}px`}
+                </span>
+              </div>
+              <input
+                id="lyrics-bg-blur-slider"
+                type="range"
+                data-testid="bg-blur-slider"
+                min="0"
+                max="40"
+                value={style.bgBlur ?? 0}
+                onChange={(e) => updateStyle({ bgBlur: parseInt(e.target.value, 10) })}
+                style={{
+                  width: '100%',
+                  accentColor: '#FFFFFF',
+                  cursor: 'pointer',
+                }}
+              />
+            </div>
           </div>
         )}
       </div>

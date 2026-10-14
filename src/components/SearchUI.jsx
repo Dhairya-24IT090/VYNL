@@ -2,13 +2,13 @@
  * Search UI — calls the streaming API for real search + ingest + stream playback.
  * Flow: search → display results → on Play: ingest → stream-link → playTrack()
  */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Search, Play, Plus, Loader2, RotateCcw, ListPlus } from "lucide-react";
 import { usePlayer } from "../context/PlayerContext";
-import { useAuth } from "../context/AuthContext";
+import { AuthContext } from "../context/AuthContext";
 import { AddToPlaylistModal } from "./AddToPlaylistModal";
 
-export const SearchUI = () => {
+export const SearchUI = ({ onSearchQuery }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +17,8 @@ export const SearchUI = () => {
   const [playlistTrack, setPlaylistTrack] = useState(null);
 
   const { playTrack, addToQueue } = usePlayer();
-  const { isAuthenticated } = useAuth();
+  const auth = useContext(AuthContext);
+  const isAuthenticated = auth?.isAuthenticated ?? false;
   const timerRef = useRef(null);
 
   const executeSearch = async (query) => {
@@ -30,6 +31,19 @@ export const SearchUI = () => {
 
     setIsLoading(true);
     setError(null);
+
+    if (onSearchQuery) {
+      try {
+        const data = await onSearchQuery(query);
+        setResults(data || []);
+      } catch (err) {
+        setError(err?.message || "Search service temporarily unavailable");
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     try {
       const params = new URLSearchParams({ title: query });
@@ -177,29 +191,34 @@ export const SearchUI = () => {
   return (
     <div style={{ width: "100%", maxWidth: "720px", margin: "0 auto" }}>
       {/* Search Input Bar */}
-      <div style={{ position: "relative", marginBottom: "20px" }}>
+      <div style={{ position: "relative", marginBottom: "28px" }}>
         <input
           data-testid="search-input"
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search tracks, artists..."
+          placeholder="Search tracks, artists, albums..."
           className="input-glass"
           style={{
-            paddingLeft: "44px",
-            paddingRight: "40px",
-            height: "48px",
+            paddingLeft: "52px",
+            paddingRight: "44px",
+            height: "54px",
             fontSize: "15px",
             borderRadius: "var(--radius-pill)",
+            backgroundColor: "rgba(255, 255, 255, 0.06)",
+            backdropFilter: "var(--backdrop-blur-dock)",
+            WebkitBackdropFilter: "var(--backdrop-blur-dock)",
+            border: "1px solid var(--color-border)",
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
           }}
           aria-label="Search"
         />
 
         <Search
-          size={18}
+          size={20}
           style={{
             position: "absolute",
-            left: "16px",
+            left: "20px",
             top: "50%",
             transform: "translateY(-50%)",
             color: "var(--color-text-tertiary)",
@@ -214,7 +233,7 @@ export const SearchUI = () => {
             data-testid="search-loading"
             style={{
               position: "absolute",
-              right: "16px",
+              right: "20px",
               top: "50%",
               transform: "translateY(-50%)",
               color: "var(--color-text-tertiary)",
@@ -229,119 +248,120 @@ export const SearchUI = () => {
           data-testid="search-error-state"
           className="glass-panel"
           style={{
-            padding: "20px",
-            borderRadius: "var(--radius-inner)",
+            padding: "20px 24px",
+            borderRadius: "var(--radius-card)",
             borderColor: "var(--color-danger)",
             backgroundColor: "var(--color-danger-glass)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "16px",
+            marginBottom: "20px",
           }}
         >
           <div>
             <div
               style={{ fontWeight: 600, color: "#FFFFFF", fontSize: "14px" }}
             >
-              Error
+              Search Error
             </div>
             <div
               style={{
-                color: "rgba(255, 255, 255, 0.7)",
+                color: "rgba(255, 255, 255, 0.75)",
                 fontSize: "13px",
-                marginTop: "2px",
+                marginTop: "3px",
               }}
             >
               {error}
             </div>
           </div>
           <button
+            data-testid="search-retry-button"
             onClick={handleRetry}
             className="btn-primary"
-            style={{ padding: "8px 16px", fontSize: "13px" }}
+            style={{ padding: "8px 18px", fontSize: "13px" }}
           >
             <RotateCcw size={14} /> Retry
           </button>
         </div>
       )}
 
-      {/* Search Results */}
+      {/* Search Results in Glass Panel with 84px Track Rows */}
       {results.length > 0 && (
         <div
           data-testid="search-results-list"
-          style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+          className="glass-panel"
+          style={{
+            borderRadius: "var(--radius-panel)",
+            backgroundColor: "rgba(255, 255, 255, 0.02)",
+            overflow: "hidden",
+            boxShadow: "var(--shadow-card)",
+          }}
         >
           {results.map((result) => {
-            const isTrackLoading = loadingTrackId === result.apple_track_id;
+            const trackKey = result.apple_track_id || result.id;
+            const isTrackLoading = loadingTrackId === trackKey;
             return (
               <div
-                key={result.apple_track_id}
-                data-testid={`search-result-${result.apple_track_id}`}
-                className="glass-card"
+                key={trackKey}
+                data-testid={`search-result-${trackKey}`}
+                className="track-row"
                 style={{
+                  opacity: isTrackLoading ? 0.6 : 1,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius-md)",
-                  opacity: isTrackLoading ? 0.6 : 1,
+                  height: "84px",
+                  padding: "0 20px",
                 }}
               >
                 <div
-                  style={{ display: "flex", alignItems: "center", gap: "14px" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    flex: 1,
+                    overflow: "hidden",
+                    paddingRight: "16px",
+                  }}
                 >
-                  <div
-                    style={{
-                      width: "42px",
-                      height: "42px",
-                      borderRadius: "var(--radius-sm)",
-                      overflow: "hidden",
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {result.artwork_url && (
-                      <img
-                        src={result.artwork_url}
-                        alt={result.title}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        color: "#FFFFFF",
-                        fontSize: "14px",
-                      }}
-                    >
-                      {result.title}
-                    </div>
-                    <div
-                      style={{
-                        color: "var(--color-text-secondary)",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {result.artist} • {formatDuration(result.duration_ms)}
-                    </div>
+                  <img
+                    src={
+                      result.artwork_url ||
+                      `https://api.dicebear.com/7.x/shapes/svg?seed=${result.apple_track_id}`
+                    }
+                    alt={result.title}
+                    className="track-artwork-circle"
+                    loading="lazy"
+                  />
+                  <div style={{ overflow: "hidden", flex: 1 }}>
+                    <div className="track-row-title">{result.title}</div>
+                    <div className="track-row-artist">{result.artist}</div>
                   </div>
                 </div>
 
                 <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    flexShrink: 0,
+                  }}
                 >
+                  <span className="track-row-time">
+                    {formatDuration(result.duration_ms)}
+                  </span>
+
                   <button
                     data-testid={`play-search-${result.apple_track_id}`}
                     onClick={() => handlePlay(result)}
                     disabled={isTrackLoading}
                     className="btn-glass"
-                    style={{ padding: "6px 12px", fontSize: "12px" }}
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: "13px",
+                      borderRadius: "var(--radius-pill)",
+                      gap: "6px",
+                    }}
                     aria-label={`Play ${result.title}`}
                   >
                     {isTrackLoading ? (
@@ -351,27 +371,29 @@ export const SearchUI = () => {
                     )}{" "}
                     Play
                   </button>
+
                   <button
                     onClick={() => handleQueue(result)}
                     disabled={isTrackLoading}
-                    className="btn-glass"
-                    style={{ padding: "6px 10px", fontSize: "12px" }}
+                    className="btn-circle"
+                    style={{ width: "42px", height: "42px" }}
                     aria-label={`Queue ${result.title}`}
                     title="Add to queue"
                   >
-                    <Plus size={14} />
+                    <Plus size={16} />
                   </button>
+
                   {isAuthenticated && (
                     <button
                       data-testid={`add-playlist-search-${result.apple_track_id}`}
                       onClick={() => setPlaylistTrack(result)}
                       disabled={isTrackLoading}
-                      className="btn-glass"
-                      style={{ padding: "6px 10px", fontSize: "12px" }}
+                      className="btn-circle"
+                      style={{ width: "42px", height: "42px" }}
                       aria-label={`Add ${result.title} to playlist`}
                       title="Add to Playlist"
                     >
-                      <ListPlus size={14} />
+                      <ListPlus size={16} />
                     </button>
                   )}
                 </div>

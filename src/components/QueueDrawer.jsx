@@ -15,21 +15,8 @@ export const QueueDrawer = ({ isOpen, onClose }) => {
 
   return (
     <aside
-      className="glass-panel"
+      className="glass-panel queue-drawer-panel"
       data-testid="queue-drawer"
-      style={{
-        position: "fixed",
-        right: "20px",
-        bottom: "110px",
-        width: "360px",
-        maxHeight: "480px",
-        zIndex: 90,
-        display: "flex",
-        flexDirection: "column",
-        padding: "16px",
-        backgroundColor: "rgba(20, 20, 24, 0.95)",
-        boxShadow: "var(--shadow-floating)",
-      }}
       aria-label="Playback Queue"
     >
       <div

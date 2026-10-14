@@ -592,108 +592,122 @@ export const PlaylistDetailPage = () => {
           </button>
         </div>
       ) : (
-        <div className="glass-panel" style={{ padding: "12px 16px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div
+          className="glass-panel"
+          style={{
+            padding: "20px 24px",
+            borderRadius: "var(--radius-panel)",
+            background: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid var(--border-glass)",
+            backdropFilter: "blur(var(--blur-glass))",
+            WebkitBackdropFilter: "blur(var(--blur-glass))",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {tracks.map((track, idx) => {
               const trackId = track.track_id || track.id;
+              const artwork = track.cover_url || track.artwork_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(track.title || "Track")}`;
               return (
                 <div
                   key={trackId || idx}
+                  className="track-row"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 12px",
-                    borderRadius: "var(--radius-sm)",
-                    backgroundColor: "rgba(255, 255, 255, 0.02)",
-                    transition: "background 150ms ease",
+                    padding: "12px 16px",
+                    borderBottom: idx < tracks.length - 1 ? "1px solid rgba(255, 255, 255, 0.08)" : "none",
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "14px",
+                      gap: "16px",
                       flex: 1,
                       minWidth: 0,
                     }}
                   >
                     <span
                       style={{
-                        color: "var(--color-text-tertiary)",
-                        fontSize: "13px",
-                        width: "20px",
+                        color: "rgba(255, 255, 255, 0.4)",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        width: "24px",
+                        textAlign: "center",
                       }}
                     >
                       {idx + 1}
                     </span>
-                    <button
+                    <div
+                      style={{ position: "relative", flexShrink: 0, cursor: "pointer" }}
                       onClick={() => handlePlayTrack(track, idx)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--color-accent)",
-                        cursor: "pointer",
-                        padding: "4px",
+                      title={`Play ${track.title}`}
+                      role="button"
+                      aria-label={`Play ${track.title}`}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          handlePlayTrack(track, idx);
+                        }
                       }}
-                      title="Play"
                     >
-                      <Play size={15} fill="currentColor" />
-                    </button>
-                    {(track.cover_url || track.artwork_url) && (
                       <img
-                        src={track.cover_url || track.artwork_url}
+                        src={artwork}
                         alt={track.title}
+                        className="track-artwork-circle track-row-artwork"
                         style={{
-                          width: "36px",
-                          height: "36px",
-                          borderRadius: "var(--radius-sm)",
+                          width: "52px",
+                          height: "52px",
+                          borderRadius: "50%",
                           objectFit: "cover",
                           flexShrink: 0,
-                          backgroundColor: "rgba(255, 255, 255, 0.05)",
+                          backgroundColor: "rgba(255, 255, 255, 0.08)",
+                          display: "block",
+                        }}
+                        onError={(e) => {
+                          e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(track.title || "Track")}`;
                         }}
                       />
-                    )}
-                    <div style={{ overflow: "hidden" }}>
                       <div
                         style={{
-                          color: "#FFFFFF",
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          textOverflow: "ellipsis",
-                          overflow: "hidden",
-                          whiteSpace: "nowrap",
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: "50%",
+                          backgroundColor: "rgba(0, 0, 0, 0.4)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "background-color 150ms ease",
                         }}
                       >
+                        <Play size={16} fill="#FFFFFF" color="#FFFFFF" style={{ marginLeft: "2px" }} />
+                      </div>
+                    </div>
+                    <div className="track-row-text">
+                      <div className="track-row-title">
                         {track.title || "Track"}
                       </div>
-                      <div
-                        style={{
-                          color: "var(--color-text-tertiary)",
-                          fontSize: "12px",
-                          textOverflow: "ellipsis",
-                          overflow: "hidden",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <div className="track-row-artist">
                         {track.artist || "Unknown Artist"}
                       </div>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleRemoveTrack(trackId)}
-                    title="Remove from playlist"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "var(--color-text-tertiary)",
-                      cursor: "pointer",
-                      padding: "6px",
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <button
+                      onClick={() => handleRemoveTrack(trackId)}
+                      title="Remove from playlist"
+                      aria-label={`Remove ${track.title} from playlist`}
+                      className="btn-circle"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        color: "rgba(255, 255, 255, 0.6)",
+                        backgroundColor: "rgba(255, 255, 255, 0.08)",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -706,13 +720,16 @@ export const PlaylistDetailPage = () => {
         data-testid="recommended-sliding-window-section"
         className="glass-panel"
         style={{
-          padding: "20px 24px",
-          marginTop: "12px",
+          padding: "24px 28px",
+          marginTop: "16px",
           display: "flex",
           flexDirection: "column",
           gap: "16px",
-          borderRadius: "var(--radius-lg)",
-          backgroundColor: "rgba(18, 18, 22, 0.75)",
+          borderRadius: "var(--radius-panel)",
+          backgroundColor: "rgba(255, 255, 255, 0.04)",
+          border: "1px solid var(--border-glass)",
+          backdropFilter: "blur(var(--blur-glass))",
+          WebkitBackdropFilter: "blur(var(--blur-glass))",
         }}
       >
         <div

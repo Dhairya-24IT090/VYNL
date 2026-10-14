@@ -4,6 +4,99 @@ All notable changes to the VYNL web client are documented in this file in revers
 
 ---
 
+## [2026-10-14 10:35]
+
+### [Category: UI/UX] — Animated Lyrics Slide-Up Layout, Bottom Scrubber Metadata & Actions Cluster, and Circular Track Row Artwork Play Overlay
+What changed:
+- **Now Playing Inline Lyrics Layout & Animation**:
+  - Embedded `@keyframes lyricsSlideUpReveal` for a fluid upward reveal animation when toggling lyrics.
+  - Hid the top cover art banner and top cradle when lyrics mode is active, completely freeing up the song section for lyrics lines.
+  - Repositioned the song title (`data-testid="now-playing-title"`) and artist (`data-testid="now-playing-artist"`) inside `.player-lyrics-bottom-meta-row` positioned directly above the playback scrubber.
+  - Positioned the action buttons (favorite Heart, Lyrics Theme Customizer, Fullscreen Expand, and options/volume menu) in a compact glass cluster to the right of the title/artist line, directly above the timeline rail.
+- **Playlist Detail Track Row Aesthetic**:
+  - Removed redundant separate play button before track artwork in `src/pages/PlaylistDetailPage.jsx`.
+  - Integrated a centered `Play` icon overlay over the circular track thumbnail with a smooth darkened backing scrim matching `TrackRow.jsx`.
+  - Retained translucent glass circular remove button (`btn-circle`) with zero opaque background artifacts.
+- **Documentation & Cleanup**:
+  - Placed comprehensive `DESIGN.md` in `VYNL/docs/DESIGN.md`.
+  - Deleted obsolete `ui-redesign-plan.md`.
+  - Updated `README.md` and living project context.
+
+Why:
+- Directly resolves user specification to remove top cover and title/artist from the lyrics upper area, smoothly animate lyrics upward, and relocate song title, artist, and actions directly above the song control cluster.
+
+---
+
+## [2026-10-14 10:22]
+
+### [Category: UI/UX] — Translucent Glass Buttons in Playlists and Cross-Screen Font & Background Consistency
+What changed:
+- Fixed playlist row buttons displaying as white square blocks by replacing undefined `circular-btn` with `btn-circle` in `src/pages/PlaylistDetailPage.jsx` and `src/pages/PlaylistsPage.jsx`, and aliasing `.circular-btn` in `src/index.css`.
+- Refactored `src/hooks/useLyricsStyle.js` into an in-memory synchronized reactive store that keeps inline and fullscreen lyrics perfectly aligned on font, background, glow, darkness, and blur.
+
+Why:
+- Fixes button aesthetics in playlists and guarantees selected font/background pairs never desynchronize between inline and fullscreen playback.
+
+---
+
+## [2026-10-14 10:15]
+
+### [Category: UI/UX] — Clear Lyrics Background, Customizer Blur/Darkness/Glow Controls, and Framed Artwork Header
+What changed:
+- Configured lyrics top header in `NowPlayingBar.jsx` with a subtle gradient fade, displaying the song title and artist layered over the cover art ("just visible enough") without jarring cropping.
+- Eliminated hardcoded heavy background blur from lyrics screens, defaulting to crystal-clear backgrounds (`bgBlur = 0`).
+- Added `bgBlur` slider to `LyricsCustomizer.jsx` alongside Background Darkening (`bgOpacity`) and Glow Intensity (`glow`), providing full user customization over all three visual dimensions.
+
+Why:
+- Direct fulfillment of user requests for a clear, atmospheric top header and user-tunable darkness, glow, and background blur controls.
+
+---
+
+## [2026-10-14 10:10]
+
+### [Category: UI/UX] — Integrated Inline Lyrics, Fullscreen Playback Cluster, and Animated Loading Spinners
+What changed:
+- Integrated synchronized lyrics directly into `NowPlayingBar.jsx`: clicking the lyrics toggle button smoothly pushes the cover artwork to the top banner and renders the synchronized lyrics lines below it in the same card.
+- Implemented dedicated Fullscreen Lyrics screen in `LyricsPanel.jsx`: expands across `100vw` × `100dvh` with large typography, RAF active-line follow, and a bottom playback control bar (timeline scrubber, heart like, Add to Playlist modal trigger, skip back, play/pause circle, skip forward, volume slider).
+- Added global `@keyframes spin` and `.animate-spin, .spin` rules to `index.css`.
+- Replaced static circular loading indicators with animated spinning circles during track buffering/loading across `SearchUI.jsx`, `TrackRow.jsx`, and `TrackCard.jsx`.
+
+Why:
+- Replaces disjointed lyrics popups with an integrated inline experience, adds full playback controls to fullscreen lyrics, and ensures active loading is clearly communicated with fluid spinning circle animations.
+
+---
+
+## [2026-10-14 09:50]
+
+### [Category: UI] — Fix oversized track artwork in PlaylistDetailPage
+What changed:
+- Constrained tracklist artwork images in `src/pages/PlaylistDetailPage.jsx` to `width: 60px; height: 60px; border-radius: 50%; object-fit: cover; flex-shrink: 0;` using both `.track-artwork-circle` and inline styles.
+- Updated `src/index.css` to bind `.track-row-artwork` to the 60px circular artwork sizing rules alongside `.track-artwork-circle`.
+
+Why:
+- In `PlaylistDetailPage.jsx`, track images lacked explicit width/height constraints and used an undefined class `.track-row-artwork`, causing images to render at their natural dimensions and overflow the track rows.
+
+---
+
+## [2026-10-14 09:35]
+
+### [Category: UI] — Cosmetic UI redesign (glass/notched/fluid-responsive); no functional changes.
+What changed:
+- Implemented Figma-specified design tokens in `src/index.css`: deep canvas `#0F0F0F`, heavy frosted surfaces (`rgba(255, 255, 255, 0.08)`, `1px rgba(255, 255, 255, 0.10)` border, blurs `10px`–`27px`), large radii (`--radius-panel: 52px`, `--radius-panel-lg: 62px`, `--radius-card: 32px`, `--radius-pill-nav: 80px`).
+- Built fluid type scale using CSS `clamp()` with Urbanist (500 body, 600 headings) and Zen Dots for brand wordmarks.
+- Built concave notch cutouts (`.notched-cutout`, `.notched-cradle-btn`) cradling floating action buttons for featured cards and the Now Playing panel.
+- Built fanned featured cards shelf on `HomePage.jsx` with subtle rotations (`-10°`, `+4°`, `+4.5°`), drop shadows, bottom glass scrims, and circular play buttons, preserving existing track counts (12 Trending, 12 For You, 8 Recent).
+- Created reusable `TrackRow.jsx` rendering 84px rows, 60px circular artwork, titles, durations, circular like hearts, and accessible options menus with Escape dismissal.
+- Upgraded desktop navigation with dual floating structures: floating glass icon rail at left (`76px`) and floating glass pill nav at top (`var(--radius-pill-nav)`), preserving routing and auth states.
+- Re-architected Now Playing into a single responsive DOM instance: docked right-hand panel on large desktop (`>=1280px`), floating glass music bar on tablet (`1024px–1279px`), and mobile mini-player expanding to full-screen sheet (`<768px`).
+- Positioned Queue Drawer and Lyrics Panel beside docked player at `right: calc(clamp(360px, 28vw, 440px) + 36px)` on desktop.
+- Retained 100% functional integrity: zero route, API, context, hook, or telemetry changes. Continuous audio playback uninterrupted.
+
+Why:
+- Fulfills user request for a purely cosmetic, ultra-premium redesign aligned with target Figma specifications while strictly preserving existing business logic, accessibility, and playback stability.
+
+---
+
 ## [2026-10-14 00:58]
 
 ### [Category: Dev] — Playlist Enhancements: Swoosh Auto-Close, Add Songs Action & 5-Song Sliding Recommendations
